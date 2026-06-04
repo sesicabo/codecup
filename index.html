@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CODECUP - Gestão Avançada</title>
+    <title>CODECUP - Gestão Automatizada</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Estilos adicionais específicos para os novos painéis de edição */
         .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 1rem; }
         .edit-mode { border: 2px dashed var(--primary); padding: 1rem; border-radius: 0.5rem; background: rgba(16, 185, 129, 0.05); }
         .btn-edit { background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem; cursor: pointer; }
@@ -14,6 +13,7 @@
         .btn-small-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem; cursor: pointer; }
         .btn-small-danger:hover { background: var(--danger); color: white; }
         .actions-cell { display: flex; gap: 5px; }
+        .painel-destaque { background: rgba(59, 130, 246, 0.1); border: 1px solid var(--accent); }
     </style>
 </head>
 <body>
@@ -36,10 +36,11 @@
 
         <div class="tabs">
             <button class="tab-btn active" onclick="showTab('tab-cadastro')">1. Equipes (Inscrições)</button>
-            <button class="tab-btn" onclick="showTab('tab-duelos')">2. Duelos & Horários</button>
+            <button class="tab-btn" onclick="showTab('tab-duelos')">2. Gerador de Duelos & Horários</button>
             <button class="tab-btn" onclick="showTab('tab-classificacao')">3. Classificação</button>
         </div>
 
+        <!-- ABA 1: CADASTRO E EDIÇÃO DE EQUIPES -->
         <div id="tab-cadastro" class="tab-content">
             <div class="grid-2">
                 <div class="panel" id="form-equipe-container">
@@ -72,69 +73,64 @@
                                 </tr>
                             </thead>
                             <tbody id="lista-equipes-crud">
-                                </tbody>
+                                <!-- Gerado via JS -->
+                            </tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- ABA 2: GERADOR AUTOMÁTICO DE DUELOS E HORÁRIOS -->
         <div id="tab-duelos" class="tab-content hidden">
             
-            <div class="grid-2">
-                <div class="panel">
-                    <h2>1. Definir Confronto</h2>
-                    <select id="duelo-modalidade" onchange="carregarDropdownsDuelo()">
-                        <option value="">Selecione o Jogo primeiro...</option>
-                        <option value="Brawl Stars">Brawl Stars</option>
-                        <option value="Fortnite">Fortnite</option>
-                        <option value="Free Fire">Free Fire</option>
-                        <option value="Valorant">Valorant</option>
-                    </select>
-                    
-                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 1rem;">
-                        <select id="duelo-t1"><option value="">Equipe 1</option></select>
-                        <span style="font-weight: bold; color: var(--danger);">VS</span>
-                        <select id="duelo-t2"><option value="">Equipe 2</option></select>
+            <div class="panel painel-destaque">
+                <h2>Gerador Automático de Chaves</h2>
+                <p style="font-size: 0.9rem; margin-bottom: 1.5rem;">Selecione a modalidade e defina os horários. O sistema fará um sorteio aleatório das equipes, montará os confrontos e aplicará os horários pulando o intervalo.</p>
+                
+                <div class="config-grid">
+                    <div>
+                        <label style="font-size: 0.8rem; font-weight: bold; color: var(--accent);">Modalidade</label>
+                        <select id="gerar-modalidade">
+                            <option value="Brawl Stars">Brawl Stars</option>
+                            <option value="Fortnite">Fortnite</option>
+                            <option value="Free Fire">Free Fire</option>
+                            <option value="Valorant">Valorant</option>
+                        </select>
                     </div>
-                    <button onclick="criarDueloManual()" style="background-color: var(--accent);">Criar Partida</button>
+                    <div>
+                        <label style="font-size: 0.8rem;">Dia do Evento</label>
+                        <select id="cfg-dia">
+                            <option value="Dia 17">Dia 17</option>
+                            <option value="Dia 18">Dia 18</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.8rem;">Início do Torneio</label>
+                        <input type="time" id="cfg-inicio" value="08:00">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.8rem;">Duração da Partida (min)</label>
+                        <input type="number" id="cfg-duracao" value="40">
+                    </div>
                 </div>
-
-                <div class="panel">
-                    <h2>2. Distribuir Horários Automaticamente</h2>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Isso aplicará horários em sequência para todas as partidas da modalidade selecionada que ainda estão "Sem Horário".</p>
-                    <div class="config-grid">
-                        <div>
-                            <label style="font-size: 0.8rem;">Dia</label>
-                            <select id="cfg-dia">
-                                <option value="Dia 17">Dia 17 (Quarta)</option>
-                                <option value="Dia 18">Dia 18 (Quinta)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="font-size: 0.8rem;">Início do Evento</label>
-                            <input type="time" id="cfg-inicio" value="08:00">
-                        </div>
-                        <div>
-                            <label style="font-size: 0.8rem;">Duração (min)</label>
-                            <input type="number" id="cfg-duracao" value="40">
-                        </div>
+                
+                <div class="config-grid">
+                    <div>
+                        <label style="font-size: 0.8rem; color: var(--danger);">Início do Intervalo</label>
+                        <input type="time" id="cfg-int-inicio" value="12:00">
                     </div>
-                    <div class="config-grid">
-                        <div>
-                            <label style="font-size: 0.8rem;">Início Intervalo</label>
-                            <input type="time" id="cfg-int-inicio" value="12:00">
-                        </div>
-                        <div>
-                            <label style="font-size: 0.8rem;">Fim Intervalo</label>
-                            <input type="time" id="cfg-int-fim" value="13:00">
-                        </div>
+                    <div>
+                        <label style="font-size: 0.8rem; color: var(--danger);">Fim do Intervalo</label>
+                        <input type="time" id="cfg-int-fim" value="13:00">
                     </div>
-                    <button onclick="distribuirHorarios()">Aplicar Horários na Modalidade</button>
                 </div>
+                
+                <button onclick="gerarDuelosAutomaticos()" style="background-color: var(--accent); margin-top: 1rem; padding: 1rem; font-size: 1.1rem;">🎲 Sortear Duelos e Aplicar Horários</button>
             </div>
 
-            <div class="panel">
+            <!-- Painel de Lista de Partidas -->
+            <div class="panel mt-4">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                     <h2>Partidas do Campeonato</h2>
                     <select id="filtro-partidas" style="width: auto; margin: 0;" onchange="loadMatches()">
@@ -147,10 +143,12 @@
                 </div>
                 
                 <div id="matches-container" class="match-grid">
-                    </div>
+                    <!-- Gerado via JS -->
+                </div>
             </div>
         </div>
 
+        <!-- ABA 3: CLASSIFICAÇÃO -->
         <div id="tab-classificacao" class="tab-content hidden">
             <div class="panel">
                 <h2>Tabela de Resultados</h2>
@@ -163,13 +161,15 @@
                         </tr>
                     </thead>
                     <tbody id="ranking-list">
-                        </tbody>
+                        <!-- Gerado via JS -->
+                    </tbody>
                 </table>
             </div>
         </div>
 
     </div>
 
+    <!-- FIREBASE & LÓGICA -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
@@ -188,7 +188,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let allTeams = []; // Cache local de equipes
+        let allTeams = [];
 
         // --- NAVEGAÇÃO ---
         window.showTab = function(tabId) {
@@ -231,11 +231,9 @@
             if(!name || !className) return alert("Preencha Nome e Turma!");
             
             if(id) {
-                // Atualizar
                 await updateDoc(doc(db, "teams", id), { name, class: className, game, members });
                 cancelarEdicaoEquipe();
             } else {
-                // Criar
                 await addDoc(collection(db, "teams"), { name, class: className, game, members, wins: 0, createdAt: Date.now() });
                 document.getElementById('t-name').value = '';
                 document.getElementById('t-members').value = '';
@@ -254,7 +252,6 @@
                     const t = { id: docSnap.id, ...docSnap.data() };
                     allTeams.push(t);
 
-                    // Tabela CRUD
                     listaCrud.innerHTML += `
                         <tr>
                             <td><strong>${t.name}</strong><br><small style="color:var(--text-muted)">${t.class}</small></td>
@@ -265,7 +262,6 @@
                             </td>
                         </tr>
                     `;
-                    // Tabela Ranking
                     listaRanking.innerHTML += `
                         <tr>
                             <td><strong>${t.name}</strong><br><small style="color:var(--text-muted)">${t.class}</small></td>
@@ -274,7 +270,6 @@
                         </tr>
                     `;
                 });
-                carregarDropdownsDuelo(); // Atualiza dropdowns se a modalidade estiver selecionada
             });
         }
 
@@ -309,54 +304,13 @@
             }
         };
 
-        // --- 2. DUELOS MANUAIS E HORÁRIOS ---
-        window.carregarDropdownsDuelo = function() {
-            const mod = document.getElementById('duelo-modalidade').value;
-            const sel1 = document.getElementById('duelo-t1');
-            const sel2 = document.getElementById('duelo-t2');
-            sel1.innerHTML = '<option value="">Equipe 1</option>';
-            sel2.innerHTML = '<option value="">Equipe 2</option>';
-            
-            if(!mod) return;
-            
-            const equipesFiltradas = allTeams.filter(t => t.game === mod);
-            equipesFiltradas.forEach(t => {
-                sel1.innerHTML += `<option value="${t.id}">${t.name}</option>`;
-                sel2.innerHTML += `<option value="${t.id}">${t.name}</option>`;
-            });
-        };
-
-        window.criarDueloManual = async function() {
-            const mod = document.getElementById('duelo-modalidade').value;
-            const t1_id = document.getElementById('duelo-t1').value;
-            const t2_id = document.getElementById('duelo-t2').value;
-
-            if(!mod || !t1_id || !t2_id) return alert("Selecione o jogo e as duas equipes.");
-            if(t1_id === t2_id) return alert("Uma equipe não pode jogar contra ela mesma!");
-
-            const t1_name = allTeams.find(t => t.id === t1_id).name;
-            const t2_name = allTeams.find(t => t.id === t2_id).name;
-
-            await addDoc(collection(db, "matches"), {
-                game: mod,
-                timeStr: "Sem Horário", // Horário pendente para o gerador
-                team1_id: t1_id, team1_name: t1_name,
-                team2_id: t2_id, team2_name: t2_name,
-                winner_id: null,
-                createdAt: Date.now()
-            });
-            alert("Duelo criado na chave!");
-        };
-
-        // --- GERADOR DE HORÁRIOS (COM INTERVALO) ---
-        window.distribuirHorarios = async function() {
-            const mod = document.getElementById('duelo-modalidade').value;
-            if(!mod) return alert("Selecione a Modalidade no 'Painel 1' acima antes de distribuir os horários.");
-
+        // --- 2. GERADOR AUTOMÁTICO DE DUELOS (RANDOM) + HORÁRIOS ---
+        window.gerarDuelosAutomaticos = async function() {
+            const mod = document.getElementById('gerar-modalidade').value;
             const dia = document.getElementById('cfg-dia').value;
             const duracaoMin = parseInt(document.getElementById('cfg-duracao').value);
             
-            // Lógica de conversão de tempo
+            // Funções utilitárias de tempo
             const strToMins = (str) => { const [h,m] = str.split(':'); return parseInt(h)*60 + parseInt(m); };
             const minsToStr = (mins) => { 
                 const h = Math.floor(mins/60).toString().padStart(2, '0');
@@ -368,40 +322,58 @@
             const intInicio = strToMins(document.getElementById('cfg-int-inicio').value);
             const intFim = strToMins(document.getElementById('cfg-int-fim').value);
 
-            // Buscar apenas partidas desta modalidade que estão "Sem Horário"
-            const querySnapshot = await getDocs(query(collection(db, "matches")));
-            let partidasParaAtualizar = [];
-            querySnapshot.forEach(doc => {
-                const data = doc.data();
-                if(data.game === mod && data.timeStr === "Sem Horário") {
-                    partidasParaAtualizar.push({ id: doc.id, ...data });
-                }
-            });
+            // Filtra as equipes da modalidade selecionada
+            let equipesFiltradas = allTeams.filter(t => t.game === mod);
 
-            if(partidasParaAtualizar.length === 0) return alert("Nenhuma partida 'Sem Horário' encontrada para esta modalidade.");
+            if(equipesFiltradas.length < 2) return alert("É necessário pelo menos 2 equipes inscritas nesta modalidade para gerar duelos.");
 
-            // Ordena pela ordem de criação
-            partidasParaAtualizar.sort((a,b) => a.createdAt - b.createdAt);
+            if(!confirm(`Isto criará duelos aleatórios e distribuirá os horários para ${mod}. Confirma?`)) return;
+
+            // Lógica de Embaralhamento (Sorteio Aleatório)
+            for (let i = equipesFiltradas.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [equipesFiltradas[i], equipesFiltradas[j]] = [equipesFiltradas[j], equipesFiltradas[i]];
+            }
 
             const batch = writeBatch(db);
-            
-            partidasParaAtualizar.forEach(partida => {
-                // Checa se o horário atual cruza com o intervalo
-                // Se o horário atual MAIS a duração da partida ultrapassar o início do intervalo, 
-                // pulamos o horário atual para o FIM do intervalo.
+            let ordemMatch = 1;
+
+            // Formar os pares (1v1)
+            for (let i = 0; i < equipesFiltradas.length; i += 2) {
+                const t1 = equipesFiltradas[i];
+                const t2 = equipesFiltradas[i+1]; // Pode ser undefined se o número de equipes for ímpar
+
+                // Checa se cruza o intervalo. Se sim, joga a partida para depois do intervalo.
                 if ((tempoAtual + duracaoMin) > intInicio && tempoAtual < intFim) {
                     tempoAtual = intFim;
                 }
 
                 const horarioFormatado = `${dia} - ${minsToStr(tempoAtual)}`;
-                batch.update(doc(db, "matches", partida.id), { timeStr: horarioFormatado });
                 
-                // Incrementa o tempo para a próxima partida
-                tempoAtual += duracaoMin;
-            });
+                // Tratar número ímpar (BYE = avança direto)
+                let t2_id = t2 ? t2.id : "bye";
+                let t2_name = t2 ? t2.name : "🏆 Avança p/ Próxima Fase";
+                let winner_id = t2 ? null : t1.id; // Se não tem t2, t1 ganha automaticamente.
+
+                const matchRef = doc(collection(db, "matches"));
+                batch.set(matchRef, {
+                    game: mod,
+                    timeStr: horarioFormatado,
+                    team1_id: t1.id, team1_name: t1.name,
+                    team2_id: t2_id, team2_name: t2_name,
+                    winner_id: winner_id,
+                    createdAt: Date.now() + ordemMatch
+                });
+
+                // Avança o relógio apenas se for uma partida real (se for BYE, não gasta horário)
+                if (t2) {
+                    tempoAtual += duracaoMin;
+                }
+                ordemMatch++;
+            }
 
             await batch.commit();
-            alert("Horários distribuídos com sucesso! O intervalo foi respeitado.");
+            alert("Chaveamento aleatório gerado e horários aplicados!");
         };
 
         // --- 3. EXIBIR E GERENCIAR DUELOS ---
@@ -437,8 +409,8 @@
                                 ${!concluido ? `<button class="btn-edit" onclick="declararVitoria('${docSnap.id}', '${m.team1_id}')">Venceu</button>` : (isT1Winner ? '<span style="color:var(--primary)">Vencedor</span>' : '')}
                             </div>
                             <div class="team-row ${isT2Winner ? 'winner' : ''}">
-                                <strong>${m.team2_name}</strong>
-                                ${!concluido ? `<button class="btn-edit" onclick="declararVitoria('${docSnap.id}', '${m.team2_id}')">Venceu</button>` : (isT2Winner ? '<span style="color:var(--primary)">Vencedor</span>' : '')}
+                                <strong style="${m.team2_id === 'bye' ? 'color:#fbbf24' : ''}">${m.team2_name}</strong>
+                                ${!concluido && m.team2_id !== 'bye' ? `<button class="btn-edit" onclick="declararVitoria('${docSnap.id}', '${m.team2_id}')">Venceu</button>` : (isT2Winner ? '<span style="color:var(--primary)">Vencedor</span>' : '')}
                             </div>
                         </div>
                     `;
@@ -447,13 +419,13 @@
         };
 
         window.excluirPartida = async function(id) {
-            if(confirm("Excluir esta partida? (Se já havia um vencedor, a vitória NÃO será removida da tabela automaticamente. Edite a equipe se necessário).")) {
+            if(confirm("Excluir esta partida permanentemente?")) {
                 await deleteDoc(doc(db, "matches", id));
             }
         };
 
         window.declararVitoria = async function(matchId, winnerId) {
-            if(!confirm("Confirmar vitória? A tabela de classificação será atualizada.")) return;
+            if(!confirm("Confirmar vitória? A equipe subirá na classificação automaticamente.")) return;
             
             const batch = writeBatch(db);
             batch.update(doc(db, "matches", matchId), { winner_id: winnerId });
