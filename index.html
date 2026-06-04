@@ -3,80 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CODECUP - Painel de Administração</title>
+    <title>CODECUP - Motor de Gestão</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div id="login-section">
         <div class="login-box">
-            <h1>CODECUP Login</h1>
-            <input type="email" id="email" placeholder="E-mail do Administrador">
-            <input type="password" id="password" placeholder="Palavra-passe">
-            <button id="btn-login">Entrar</button>
-            <p id="login-error" style="color: #ef4444; text-align: center; margin-top: 1rem; font-size: 0.875rem;"></p>
+            <h1>CODECUP Admin</h1>
+            <input type="email" id="email" placeholder="E-mail">
+            <input type="password" id="password" placeholder="Senha">
+            <button id="btn-login">Acessar Sistema</button>
+            <p id="login-error" style="color: var(--danger); text-align: center; margin-top: 1rem;"></p>
         </div>
     </div>
 
     <div id="admin-section" class="hidden">
         <header>
-            <h1>DASHBOARD <span>CODECUP</span></h1>
-            <button id="btn-logout" class="btn-danger">Sair</button>
+            <h1>GESTÃO <span>CODECUP</span></h1>
+            <button id="btn-logout" class="btn-danger">Encerrar Sessão</button>
         </header>
 
-        <div class="grid-container">
-            <div class="panel">
-                <h2>Registar Equipa</h2>
-                <div style="margin-top: 1rem;">
-                    <input type="text" id="t-name" placeholder="Nome da Equipa">
-                    <input type="text" id="t-class" placeholder="Sala / Turma">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('tab-cadastro')">1. Inscrições</button>
+            <button class="tab-btn" onclick="showTab('tab-duelos')">2. Duelos & Horários</button>
+            <button class="tab-btn" onclick="showTab('tab-classificacao')">3. Classificação Geral</button>
+        </div>
+
+        <div id="tab-cadastro" class="tab-content">
+            <div class="panel" style="max-width: 600px; margin: 0 auto;">
+                <h2>Registrar Nova Equipe</h2>
+                <div style="margin-top: 1.5rem;">
+                    <input type="text" id="t-name" placeholder="Nome da Equipe">
+                    <input type="text" id="t-class" placeholder="Sala / Turma (Ex: 3º Ano A)">
                     <select id="t-game">
-                        <option value="Brawl Stars">Brawl Stars (10 equipas)</option>
-                        <option value="Fortnite">Fortnite (6 equipas)</option>
-                        <option value="Free Fire">Free Fire (8 equipas)</option>
-                        <option value="Valorant">Valorant (3 equipas)</option>
+                        <option value="Brawl Stars">Brawl Stars</option>
+                        <option value="Fortnite">Fortnite</option>
+                        <option value="Free Fire">Free Fire</option>
+                        <option value="Valorant">Valorant</option>
                     </select>
-                    <textarea id="t-members" placeholder="Integrantes (separados por vírgula)" rows="3"></textarea>
-                    <button id="btn-save">Gravar no Firebase</button>
+                    <textarea id="t-members" placeholder="Nome dos Alunos (separados por vírgula)" rows="3"></textarea>
+                    <button id="btn-save">Adicionar ao Torneio</button>
                 </div>
             </div>
+        </div>
 
+        <div id="tab-duelos" class="tab-content hidden">
+            <div class="panel">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2>Painel de Partidas (Matchups)</h2>
+                    <div style="display: flex; gap: 1rem;">
+                        <select id="gerar-modalidade" style="margin: 0; width: auto;">
+                            <option value="Brawl Stars">Brawl Stars</option>
+                            <option value="Fortnite">Fortnite</option>
+                            <option value="Free Fire">Free Fire</option>
+                            <option value="Valorant">Valorant</option>
+                        </select>
+                        <button class="btn-gerar" onclick="gerarChaveamento()" style="width: auto; margin: 0;">Gerar Chaveamento / Horários</button>
+                    </div>
+                </div>
+                <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.9rem;">
+                    O sistema pegará as equipes da modalidade selecionada e criará os confrontos automaticamente, definindo horários a partir das 08:00h.
+                </p>
+                
+                <div id="matches-container" class="match-grid">
+                    </div>
+            </div>
+        </div>
+
+        <div id="tab-classificacao" class="tab-content hidden">
             <div class="panel">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h2>Classificação Atual</h2>
-                    <select id="filter-game" style="width: auto; margin-bottom: 0; padding: 0.5rem 1rem;">
-                        <option value="Todos">Ver Todos</option>
+                    <h2>Tabela de Resultados</h2>
+                    <select id="filter-game" style="width: auto; margin: 0;">
+                        <option value="Todos">Todas as Modalidades</option>
                         <option value="Brawl Stars">Brawl Stars</option>
                         <option value="Fortnite">Fortnite</option>
                         <option value="Free Fire">Free Fire</option>
                         <option value="Valorant">Valorant</option>
                     </select>
                 </div>
-                
-                <div style="overflow-x: auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Equipa / Elementos</th>
-                                <th>Modalidade</th>
-                                <th>Vitórias</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ranking-list">
-                            </tbody>
-                    </table>
-                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Equipe / Turma</th>
+                            <th>Modalidade</th>
+                            <th>Vitórias</th>
+                            <th>Status (Alunos)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ranking-list">
+                        </tbody>
+                </table>
             </div>
         </div>
+
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, where, doc, updateDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-        // A SUA CONFIGURAÇÃO OFICIAL DO FIREBASE (CODECUP)
         const firebaseConfig = {
             apiKey: "AIzaSyD7flH7shnJj1v7hfOcSxLgbP2jgn8gaW8",
             authDomain: "codecup-7a34a.firebaseapp.com",
@@ -90,14 +118,20 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Controlo de Fluxo de Autenticação
+        // --- SISTEMA DE ABAS ---
+        window.showTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabId).classList.remove('hidden');
+            event.currentTarget.classList.add('active');
+        };
+
+        // --- AUTENTICAÇÃO ---
         document.getElementById('btn-login').addEventListener('click', async () => {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
             try {
-                await signInWithEmailAndPassword(auth, email, pass);
+                await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
             } catch (e) {
-                document.getElementById('login-error').innerText = "Acesso negado: " + e.message;
+                document.getElementById('login-error').innerText = "Erro: " + e.message;
             }
         });
 
@@ -106,6 +140,7 @@
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('admin-section').classList.remove('hidden');
                 loadTeams();
+                loadMatches();
             } else {
                 document.getElementById('login-section').classList.remove('hidden');
                 document.getElementById('admin-section').classList.add('hidden');
@@ -114,80 +149,157 @@
 
         document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
 
-        // Inserção de dados no Cloud Firestore
+        // --- 1. CADASTRO DE EQUIPES ---
         document.getElementById('btn-save').addEventListener('click', async () => {
             const name = document.getElementById('t-name').value;
             const className = document.getElementById('t-class').value;
-            const game = document.getElementById('t-game').value;
-            const members = document.getElementById('t-members').value;
-
-            if(!name || !className || !members) {
-                alert("Por favor, preencha todos os campos antes de salvar.");
-                return;
-            }
-
-            try {
-                await addDoc(collection(db, "teams"), {
-                    name: name,
-                    class: className,
-                    game: game,
-                    members: members,
-                    wins: 0,
-                    createdAt: Date.now()
-                });
-                
-                // Limpar o formulário após o sucesso
-                document.getElementById('t-name').value = '';
-                document.getElementById('t-class').value = '';
-                document.getElementById('t-members').value = '';
-                alert("Equipa registada com sucesso!");
-            } catch (e) {
-                alert("Erro ao ligar ao servidor: " + e.message);
-            }
+            if(!name || !className) return alert("Preencha Nome e Turma!");
+            
+            await addDoc(collection(db, "teams"), {
+                name: name,
+                class: className,
+                game: document.getElementById('t-game').value,
+                members: document.getElementById('t-members').value,
+                wins: 0,
+                createdAt: Date.now()
+            });
+            alert("Equipe cadastrada na base de dados!");
+            document.getElementById('t-name').value = '';
+            document.getElementById('t-members').value = '';
         });
 
-        // Monitorização do Filtro de Seleção
+        // --- 2. MOTOR DE CHAVEAMENTO E HORÁRIOS ---
+        window.gerarChaveamento = async function() {
+            const modalidade = document.getElementById('gerar-modalidade').value;
+            if(!confirm(`Gerar chaves automáticas para ${modalidade}? Isso apagará duelos anteriores desta modalidade.`)) return;
+
+            // Busca todas as equipes dessa modalidade
+            const q = query(collection(db, "teams"), where("game", "==", modalidade));
+            const querySnapshot = await getDocs(q);
+            let equipes = [];
+            querySnapshot.forEach((doc) => { equipes.push({ id: doc.id, ...doc.data() }); });
+
+            if(equipes.length < 2) return alert("Precisa de pelo menos 2 equipes para gerar duelos.");
+
+            // Embaralhar equipes para sorteio justo
+            equipes = equipes.sort(() => Math.random() - 0.5);
+
+            const batch = writeBatch(db);
+            let horarioBase = new Date("2026-06-17T08:00:00"); // Início do CODECUP
+            
+            // Apaga duelos antigos da modalidade
+            const oldMatches = await getDocs(query(collection(db, "matches"), where("game", "==", modalidade)));
+            oldMatches.forEach(d => batch.delete(d.ref));
+
+            // Gera confrontos (1v2, 3v4, etc.)
+            let matchNumber = 1;
+            for(let i = 0; i < equipes.length; i += 2) {
+                if(equipes[i+1]) { // Se houver adversário
+                    const timeString = horarioBase.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                    
+                    const matchRef = doc(collection(db, "matches"));
+                    batch.set(matchRef, {
+                        game: modalidade,
+                        fase: "Rodada 1",
+                        timeStr: `Dia 17 - ${timeString}`,
+                        team1_id: equipes[i].id,
+                        team1_name: equipes[i].name,
+                        team2_id: equipes[i+1].id,
+                        team2_name: equipes[i+1].name,
+                        winner_id: null,
+                        createdAt: Date.now() + matchNumber
+                    });
+
+                    // Adiciona 40 minutos para a próxima partida
+                    horarioBase.setMinutes(horarioBase.getMinutes() + 40);
+                    matchNumber++;
+                }
+            }
+
+            await batch.commit();
+            alert("Chaveamento e horários gerados com sucesso!");
+        };
+
+        // --- 3. EXIBIR DUELOS E DEFINIR VENCEDORES ---
+        function loadMatches() {
+            const q = query(collection(db, "matches"), orderBy("createdAt", "asc"));
+            onSnapshot(q, snapshot => {
+                const container = document.getElementById('matches-container');
+                container.innerHTML = "";
+                
+                snapshot.forEach(docSnap => {
+                    const m = docSnap.data();
+                    const isT1Winner = m.winner_id === m.team1_id;
+                    const isT2Winner = m.winner_id === m.team2_id;
+                    const concluido = m.winner_id !== null;
+
+                    const div = document.createElement('div');
+                    div.className = 'match-card';
+                    div.innerHTML = `
+                        <div class="match-header">
+                            <span>${m.game} - ${m.fase}</span>
+                            <span class="match-time">${m.timeStr}</span>
+                        </div>
+                        <div class="team-row ${isT1Winner ? 'winner' : ''}">
+                            <strong>${m.team1_name}</strong>
+                            ${!concluido ? `<button class="btn-win" onclick="declararVitoria('${docSnap.id}', '${m.team1_id}', '${m.team2_id}')">Venceu</button>` : (isT1Winner ? '<span style="color:var(--primary)">Vencedor</span>' : '')}
+                        </div>
+                        <div class="team-row ${isT2Winner ? 'winner' : ''}">
+                            <strong>${m.team2_name}</strong>
+                            ${!concluido ? `<button class="btn-win" onclick="declararVitoria('${docSnap.id}', '${m.team2_id}', '${m.team1_id}')">Venceu</button>` : (isT2Winner ? '<span style="color:var(--primary)">Vencedor</span>' : '')}
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            });
+        }
+
+        window.declararVitoria = async function(matchId, winnerId, loserId) {
+            if(!confirm("Confirmar vitória? A tabela de classificação será atualizada automaticamente.")) return;
+            
+            const batch = writeBatch(db);
+            
+            // 1. Marca o vencedor na partida
+            batch.update(doc(db, "matches", matchId), { winner_id: winnerId });
+            
+            // 2. Adiciona +1 Vitória na Tabela para a equipe
+            // Pega os dados atuais da equipe para somar
+            const teamsSnap = await getDocs(query(collection(db, "teams")));
+            let currentWins = 0;
+            teamsSnap.forEach(t => { if(t.id === winnerId) currentWins = t.data().wins; });
+            batch.update(doc(db, "teams", winnerId), { wins: currentWins + 1 });
+
+            await batch.commit();
+        };
+
+        // --- 4. CLASSIFICAÇÃO GERAL ---
         let currentFilter = "Todos";
         document.getElementById('filter-game').addEventListener('change', (e) => {
             currentFilter = e.target.value;
             loadTeams();
         });
 
-        // Leitura e atualização da tabela em tempo real (Real-time Listener)
         function loadTeams() {
             const q = query(collection(db, "teams"), orderBy("wins", "desc"));
-            
             onSnapshot(q, snapshot => {
                 const list = document.getElementById('ranking-list');
                 list.innerHTML = "";
                 
                 snapshot.forEach(docSnap => {
                     const t = docSnap.data();
-                    
-                    // Aplicação do filtro escolhido no painel
                     if (currentFilter !== "Todos" && t.game !== currentFilter) return;
 
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td>
-                            <strong>${t.name}</strong><br>
-                            <span style="font-size: 0.8rem; color: #94a3b8;">${t.class} • Filiação: ${t.members}</span>
-                        </td>
-                        <td style="font-size: 0.9rem;">${t.game}</td>
-                        <td style="font-family: monospace; color: #10b981; font-weight: bold; font-size: 1.15rem;">${t.wins}</td>
-                        <td>
-                            <button onclick="window.updateWin('${docSnap.id}', ${t.wins + 1})" style="width: auto; padding: 0.35rem 0.6rem; font-size: 0.75rem; background-color: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; margin-right: 0.5rem; cursor: pointer;">+1 Vit</button>
-                            <button onclick="window.removeTeam('${docSnap.id}')" class="btn-danger" style="padding: 0.35rem 0.6rem; font-size: 0.75rem; cursor: pointer;">Remover</button>
-                        </td>
+                        <td><strong>${t.name}</strong><br><small style="color: var(--text-muted)">${t.class}</small></td>
+                        <td>${t.game}</td>
+                        <td style="color: var(--primary); font-weight: bold; font-size: 1.2rem;">${t.wins}</td>
+                        <td style="font-size: 0.8rem; color: var(--text-muted);">${t.members}</td>
                     `;
                     list.appendChild(tr);
                 });
             });
         }
-
-        // Funções globais para manipulação dos registos da tabela
-        window.updateWin = async (id, newCount) => await updateDoc(doc(db, "teams", id), { wins: newCount });
-        window.removeTeam = async (id) => { if(confirm("Tem a certeza que deseja eliminar esta equipa do campeonato?")) await deleteDoc(doc(db, "teams", id)); };
     </script>
 </body>
 </html>
