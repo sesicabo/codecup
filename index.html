@@ -3,8 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CODECUP - Motor de Gestão</title>
+    <title>CODECUP - Gestão Avançada</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Estilos adicionais específicos para os novos painéis de edição */
+        .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 1rem; }
+        .edit-mode { border: 2px dashed var(--primary); padding: 1rem; border-radius: 0.5rem; background: rgba(16, 185, 129, 0.05); }
+        .btn-edit { background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem; cursor: pointer; }
+        .btn-edit:hover { background: var(--accent); color: white; }
+        .btn-small-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem; cursor: pointer; }
+        .btn-small-danger:hover { background: var(--danger); color: white; }
+        .actions-cell { display: flex; gap: 5px; }
+    </style>
 </head>
 <body>
 
@@ -25,15 +35,16 @@
         </header>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="showTab('tab-cadastro')">1. Inscrições</button>
+            <button class="tab-btn active" onclick="showTab('tab-cadastro')">1. Equipes (Inscrições)</button>
             <button class="tab-btn" onclick="showTab('tab-duelos')">2. Duelos & Horários</button>
-            <button class="tab-btn" onclick="showTab('tab-classificacao')">3. Classificação Geral</button>
+            <button class="tab-btn" onclick="showTab('tab-classificacao')">3. Classificação</button>
         </div>
 
         <div id="tab-cadastro" class="tab-content">
-            <div class="panel" style="max-width: 600px; margin: 0 auto;">
-                <h2>Registrar Nova Equipe</h2>
-                <div style="margin-top: 1.5rem;">
+            <div class="grid-2">
+                <div class="panel" id="form-equipe-container">
+                    <h2 id="form-equipe-titulo">Registrar Nova Equipe</h2>
+                    <input type="hidden" id="t-id">
                     <input type="text" id="t-name" placeholder="Nome da Equipe">
                     <input type="text" id="t-class" placeholder="Sala / Turma (Ex: 3º Ano A)">
                     <select id="t-game">
@@ -43,28 +54,97 @@
                         <option value="Valorant">Valorant</option>
                     </select>
                     <textarea id="t-members" placeholder="Nome dos Alunos (separados por vírgula)" rows="3"></textarea>
-                    <button id="btn-save">Adicionar ao Torneio</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="btn-save-team">Salvar Equipe</button>
+                        <button id="btn-cancel-edit-team" class="hidden btn-danger" onclick="cancelarEdicaoEquipe()">Cancelar</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2>Equipes Cadastradas</h2>
+                    <div style="overflow-y: auto; max-height: 400px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Equipe</th>
+                                    <th>Modalidade</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-equipes-crud">
+                                </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div id="tab-duelos" class="tab-content hidden">
-            <div class="panel">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <h2>Painel de Partidas (Matchups)</h2>
-                    <div style="display: flex; gap: 1rem;">
-                        <select id="gerar-modalidade" style="margin: 0; width: auto;">
-                            <option value="Brawl Stars">Brawl Stars</option>
-                            <option value="Fortnite">Fortnite</option>
-                            <option value="Free Fire">Free Fire</option>
-                            <option value="Valorant">Valorant</option>
-                        </select>
-                        <button class="btn-gerar" onclick="gerarChaveamento()" style="width: auto; margin: 0;">Gerar Chaveamento / Horários</button>
+            
+            <div class="grid-2">
+                <div class="panel">
+                    <h2>1. Definir Confronto</h2>
+                    <select id="duelo-modalidade" onchange="carregarDropdownsDuelo()">
+                        <option value="">Selecione o Jogo primeiro...</option>
+                        <option value="Brawl Stars">Brawl Stars</option>
+                        <option value="Fortnite">Fortnite</option>
+                        <option value="Free Fire">Free Fire</option>
+                        <option value="Valorant">Valorant</option>
+                    </select>
+                    
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 1rem;">
+                        <select id="duelo-t1"><option value="">Equipe 1</option></select>
+                        <span style="font-weight: bold; color: var(--danger);">VS</span>
+                        <select id="duelo-t2"><option value="">Equipe 2</option></select>
                     </div>
+                    <button onclick="criarDueloManual()" style="background-color: var(--accent);">Criar Partida</button>
                 </div>
-                <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.9rem;">
-                    O sistema pegará as equipes da modalidade selecionada e criará os confrontos automaticamente, definindo horários a partir das 08:00h.
-                </p>
+
+                <div class="panel">
+                    <h2>2. Distribuir Horários Automaticamente</h2>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Isso aplicará horários em sequência para todas as partidas da modalidade selecionada que ainda estão "Sem Horário".</p>
+                    <div class="config-grid">
+                        <div>
+                            <label style="font-size: 0.8rem;">Dia</label>
+                            <select id="cfg-dia">
+                                <option value="Dia 17">Dia 17 (Quarta)</option>
+                                <option value="Dia 18">Dia 18 (Quinta)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem;">Início do Evento</label>
+                            <input type="time" id="cfg-inicio" value="08:00">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem;">Duração (min)</label>
+                            <input type="number" id="cfg-duracao" value="40">
+                        </div>
+                    </div>
+                    <div class="config-grid">
+                        <div>
+                            <label style="font-size: 0.8rem;">Início Intervalo</label>
+                            <input type="time" id="cfg-int-inicio" value="12:00">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem;">Fim Intervalo</label>
+                            <input type="time" id="cfg-int-fim" value="13:00">
+                        </div>
+                    </div>
+                    <button onclick="distribuirHorarios()">Aplicar Horários na Modalidade</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2>Partidas do Campeonato</h2>
+                    <select id="filtro-partidas" style="width: auto; margin: 0;" onchange="loadMatches()">
+                        <option value="Todas">Ver Todas</option>
+                        <option value="Brawl Stars">Brawl Stars</option>
+                        <option value="Fortnite">Fortnite</option>
+                        <option value="Free Fire">Free Fire</option>
+                        <option value="Valorant">Valorant</option>
+                    </select>
+                </div>
                 
                 <div id="matches-container" class="match-grid">
                     </div>
@@ -73,23 +153,13 @@
 
         <div id="tab-classificacao" class="tab-content hidden">
             <div class="panel">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h2>Tabela de Resultados</h2>
-                    <select id="filter-game" style="width: auto; margin: 0;">
-                        <option value="Todos">Todas as Modalidades</option>
-                        <option value="Brawl Stars">Brawl Stars</option>
-                        <option value="Fortnite">Fortnite</option>
-                        <option value="Free Fire">Free Fire</option>
-                        <option value="Valorant">Valorant</option>
-                    </select>
-                </div>
+                <h2>Tabela de Resultados</h2>
                 <table>
                     <thead>
                         <tr>
                             <th>Equipe / Turma</th>
                             <th>Modalidade</th>
                             <th>Vitórias</th>
-                            <th>Status (Alunos)</th>
                         </tr>
                     </thead>
                     <tbody id="ranking-list">
@@ -103,7 +173,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, where, doc, updateDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyD7flH7shnJj1v7hfOcSxLgbP2jgn8gaW8",
@@ -118,7 +188,9 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // --- SISTEMA DE ABAS ---
+        let allTeams = []; // Cache local de equipes
+
+        // --- NAVEGAÇÃO ---
         window.showTab = function(tabId) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -126,180 +198,272 @@
             event.currentTarget.classList.add('active');
         };
 
-        // --- AUTENTICAÇÃO ---
+        // --- AUTH ---
         document.getElementById('btn-login').addEventListener('click', async () => {
-            try {
-                await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
-            } catch (e) {
-                document.getElementById('login-error').innerText = "Erro: " + e.message;
-            }
+            try { await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); } 
+            catch (e) { document.getElementById('login-error').innerText = "Erro: " + e.message; }
         });
-
         onAuthStateChanged(auth, user => {
             if (user) {
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('admin-section').classList.remove('hidden');
-                loadTeams();
-                loadMatches();
+                initSystem();
             } else {
                 document.getElementById('login-section').classList.remove('hidden');
                 document.getElementById('admin-section').classList.add('hidden');
             }
         });
-
         document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
 
-        // --- 1. CADASTRO DE EQUIPES ---
-        document.getElementById('btn-save').addEventListener('click', async () => {
+        function initSystem() {
+            loadTeams();
+            loadMatches();
+        }
+
+        // --- 1. CRUD DE EQUIPES ---
+        document.getElementById('btn-save-team').addEventListener('click', async () => {
+            const id = document.getElementById('t-id').value;
             const name = document.getElementById('t-name').value;
             const className = document.getElementById('t-class').value;
+            const game = document.getElementById('t-game').value;
+            const members = document.getElementById('t-members').value;
+
             if(!name || !className) return alert("Preencha Nome e Turma!");
             
-            await addDoc(collection(db, "teams"), {
-                name: name,
-                class: className,
-                game: document.getElementById('t-game').value,
-                members: document.getElementById('t-members').value,
-                wins: 0,
-                createdAt: Date.now()
-            });
-            alert("Equipe cadastrada na base de dados!");
-            document.getElementById('t-name').value = '';
-            document.getElementById('t-members').value = '';
+            if(id) {
+                // Atualizar
+                await updateDoc(doc(db, "teams", id), { name, class: className, game, members });
+                cancelarEdicaoEquipe();
+            } else {
+                // Criar
+                await addDoc(collection(db, "teams"), { name, class: className, game, members, wins: 0, createdAt: Date.now() });
+                document.getElementById('t-name').value = '';
+                document.getElementById('t-members').value = '';
+            }
         });
 
-        // --- 2. MOTOR DE CHAVEAMENTO E HORÁRIOS ---
-        window.gerarChaveamento = async function() {
-            const modalidade = document.getElementById('gerar-modalidade').value;
-            if(!confirm(`Gerar chaves automáticas para ${modalidade}? Isso apagará duelos anteriores desta modalidade.`)) return;
+        function loadTeams() {
+            const q = query(collection(db, "teams"), orderBy("wins", "desc"));
+            onSnapshot(q, snapshot => {
+                allTeams = [];
+                const listaCrud = document.getElementById('lista-equipes-crud');
+                const listaRanking = document.getElementById('ranking-list');
+                listaCrud.innerHTML = ""; listaRanking.innerHTML = "";
+                
+                snapshot.forEach(docSnap => {
+                    const t = { id: docSnap.id, ...docSnap.data() };
+                    allTeams.push(t);
 
-            // Busca todas as equipes dessa modalidade
-            const q = query(collection(db, "teams"), where("game", "==", modalidade));
-            const querySnapshot = await getDocs(q);
-            let equipes = [];
-            querySnapshot.forEach((doc) => { equipes.push({ id: doc.id, ...doc.data() }); });
+                    // Tabela CRUD
+                    listaCrud.innerHTML += `
+                        <tr>
+                            <td><strong>${t.name}</strong><br><small style="color:var(--text-muted)">${t.class}</small></td>
+                            <td>${t.game}</td>
+                            <td class="actions-cell">
+                                <button class="btn-edit" onclick="editarEquipe('${t.id}')">Editar</button>
+                                <button class="btn-small-danger" onclick="excluirEquipe('${t.id}')">X</button>
+                            </td>
+                        </tr>
+                    `;
+                    // Tabela Ranking
+                    listaRanking.innerHTML += `
+                        <tr>
+                            <td><strong>${t.name}</strong><br><small style="color:var(--text-muted)">${t.class}</small></td>
+                            <td>${t.game}</td>
+                            <td style="color:var(--primary); font-weight:bold; font-size:1.2rem;">${t.wins}</td>
+                        </tr>
+                    `;
+                });
+                carregarDropdownsDuelo(); // Atualiza dropdowns se a modalidade estiver selecionada
+            });
+        }
 
-            if(equipes.length < 2) return alert("Precisa de pelo menos 2 equipes para gerar duelos.");
-
-            // Embaralhar equipes para sorteio justo
-            equipes = equipes.sort(() => Math.random() - 0.5);
-
-            const batch = writeBatch(db);
-            let horarioBase = new Date("2026-06-17T08:00:00"); // Início do CODECUP
+        window.editarEquipe = function(id) {
+            const t = allTeams.find(x => x.id === id);
+            if(!t) return;
+            document.getElementById('t-id').value = t.id;
+            document.getElementById('t-name').value = t.name;
+            document.getElementById('t-class').value = t.class;
+            document.getElementById('t-game').value = t.game;
+            document.getElementById('t-members').value = t.members;
             
-            // Apaga duelos antigos da modalidade
-            const oldMatches = await getDocs(query(collection(db, "matches"), where("game", "==", modalidade)));
-            oldMatches.forEach(d => batch.delete(d.ref));
-
-            // Gera confrontos (1v2, 3v4, etc.)
-            let matchNumber = 1;
-            for(let i = 0; i < equipes.length; i += 2) {
-                if(equipes[i+1]) { // Se houver adversário
-                    const timeString = horarioBase.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                    
-                    const matchRef = doc(collection(db, "matches"));
-                    batch.set(matchRef, {
-                        game: modalidade,
-                        fase: "Rodada 1",
-                        timeStr: `Dia 17 - ${timeString}`,
-                        team1_id: equipes[i].id,
-                        team1_name: equipes[i].name,
-                        team2_id: equipes[i+1].id,
-                        team2_name: equipes[i+1].name,
-                        winner_id: null,
-                        createdAt: Date.now() + matchNumber
-                    });
-
-                    // Adiciona 40 minutos para a próxima partida
-                    horarioBase.setMinutes(horarioBase.getMinutes() + 40);
-                    matchNumber++;
-                }
-            }
-
-            await batch.commit();
-            alert("Chaveamento e horários gerados com sucesso!");
+            document.getElementById('form-equipe-container').classList.add('edit-mode');
+            document.getElementById('form-equipe-titulo').innerText = "Editando Equipe";
+            document.getElementById('btn-save-team').innerText = "Atualizar Cadastro";
+            document.getElementById('btn-cancel-edit-team').classList.remove('hidden');
         };
 
-        // --- 3. EXIBIR DUELOS E DEFINIR VENCEDORES ---
-        function loadMatches() {
+        window.cancelarEdicaoEquipe = function() {
+            document.getElementById('t-id').value = "";
+            document.getElementById('t-name').value = "";
+            document.getElementById('t-members').value = "";
+            document.getElementById('form-equipe-container').classList.remove('edit-mode');
+            document.getElementById('form-equipe-titulo').innerText = "Registrar Nova Equipe";
+            document.getElementById('btn-save-team').innerText = "Salvar Equipe";
+            document.getElementById('btn-cancel-edit-team').classList.add('hidden');
+        };
+
+        window.excluirEquipe = async function(id) {
+            if(confirm("Excluir esta equipe permanentemente?")) {
+                await deleteDoc(doc(db, "teams", id));
+            }
+        };
+
+        // --- 2. DUELOS MANUAIS E HORÁRIOS ---
+        window.carregarDropdownsDuelo = function() {
+            const mod = document.getElementById('duelo-modalidade').value;
+            const sel1 = document.getElementById('duelo-t1');
+            const sel2 = document.getElementById('duelo-t2');
+            sel1.innerHTML = '<option value="">Equipe 1</option>';
+            sel2.innerHTML = '<option value="">Equipe 2</option>';
+            
+            if(!mod) return;
+            
+            const equipesFiltradas = allTeams.filter(t => t.game === mod);
+            equipesFiltradas.forEach(t => {
+                sel1.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+                sel2.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+            });
+        };
+
+        window.criarDueloManual = async function() {
+            const mod = document.getElementById('duelo-modalidade').value;
+            const t1_id = document.getElementById('duelo-t1').value;
+            const t2_id = document.getElementById('duelo-t2').value;
+
+            if(!mod || !t1_id || !t2_id) return alert("Selecione o jogo e as duas equipes.");
+            if(t1_id === t2_id) return alert("Uma equipe não pode jogar contra ela mesma!");
+
+            const t1_name = allTeams.find(t => t.id === t1_id).name;
+            const t2_name = allTeams.find(t => t.id === t2_id).name;
+
+            await addDoc(collection(db, "matches"), {
+                game: mod,
+                timeStr: "Sem Horário", // Horário pendente para o gerador
+                team1_id: t1_id, team1_name: t1_name,
+                team2_id: t2_id, team2_name: t2_name,
+                winner_id: null,
+                createdAt: Date.now()
+            });
+            alert("Duelo criado na chave!");
+        };
+
+        // --- GERADOR DE HORÁRIOS (COM INTERVALO) ---
+        window.distribuirHorarios = async function() {
+            const mod = document.getElementById('duelo-modalidade').value;
+            if(!mod) return alert("Selecione a Modalidade no 'Painel 1' acima antes de distribuir os horários.");
+
+            const dia = document.getElementById('cfg-dia').value;
+            const duracaoMin = parseInt(document.getElementById('cfg-duracao').value);
+            
+            // Lógica de conversão de tempo
+            const strToMins = (str) => { const [h,m] = str.split(':'); return parseInt(h)*60 + parseInt(m); };
+            const minsToStr = (mins) => { 
+                const h = Math.floor(mins/60).toString().padStart(2, '0');
+                const m = (mins%60).toString().padStart(2, '0');
+                return `${h}:${m}`;
+            };
+
+            let tempoAtual = strToMins(document.getElementById('cfg-inicio').value);
+            const intInicio = strToMins(document.getElementById('cfg-int-inicio').value);
+            const intFim = strToMins(document.getElementById('cfg-int-fim').value);
+
+            // Buscar apenas partidas desta modalidade que estão "Sem Horário"
+            const querySnapshot = await getDocs(query(collection(db, "matches")));
+            let partidasParaAtualizar = [];
+            querySnapshot.forEach(doc => {
+                const data = doc.data();
+                if(data.game === mod && data.timeStr === "Sem Horário") {
+                    partidasParaAtualizar.push({ id: doc.id, ...data });
+                }
+            });
+
+            if(partidasParaAtualizar.length === 0) return alert("Nenhuma partida 'Sem Horário' encontrada para esta modalidade.");
+
+            // Ordena pela ordem de criação
+            partidasParaAtualizar.sort((a,b) => a.createdAt - b.createdAt);
+
+            const batch = writeBatch(db);
+            
+            partidasParaAtualizar.forEach(partida => {
+                // Checa se o horário atual cruza com o intervalo
+                // Se o horário atual MAIS a duração da partida ultrapassar o início do intervalo, 
+                // pulamos o horário atual para o FIM do intervalo.
+                if ((tempoAtual + duracaoMin) > intInicio && tempoAtual < intFim) {
+                    tempoAtual = intFim;
+                }
+
+                const horarioFormatado = `${dia} - ${minsToStr(tempoAtual)}`;
+                batch.update(doc(db, "matches", partida.id), { timeStr: horarioFormatado });
+                
+                // Incrementa o tempo para a próxima partida
+                tempoAtual += duracaoMin;
+            });
+
+            await batch.commit();
+            alert("Horários distribuídos com sucesso! O intervalo foi respeitado.");
+        };
+
+        // --- 3. EXIBIR E GERENCIAR DUELOS ---
+        window.loadMatches = function() {
+            const filtro = document.getElementById('filtro-partidas').value;
             const q = query(collection(db, "matches"), orderBy("createdAt", "asc"));
+            
             onSnapshot(q, snapshot => {
                 const container = document.getElementById('matches-container');
                 container.innerHTML = "";
                 
                 snapshot.forEach(docSnap => {
                     const m = docSnap.data();
+                    if(filtro !== "Todas" && m.game !== filtro) return;
+
                     const isT1Winner = m.winner_id === m.team1_id;
                     const isT2Winner = m.winner_id === m.team2_id;
                     const concluido = m.winner_id !== null;
 
-                    const div = document.createElement('div');
-                    div.className = 'match-card';
-                    div.innerHTML = `
-                        <div class="match-header">
-                            <span>${m.game} - ${m.fase}</span>
-                            <span class="match-time">${m.timeStr}</span>
-                        </div>
-                        <div class="team-row ${isT1Winner ? 'winner' : ''}">
-                            <strong>${m.team1_name}</strong>
-                            ${!concluido ? `<button class="btn-win" onclick="declararVitoria('${docSnap.id}', '${m.team1_id}', '${m.team2_id}')">Venceu</button>` : (isT1Winner ? '<span style="color:var(--primary)">Vencedor</span>' : '')}
-                        </div>
-                        <div class="team-row ${isT2Winner ? 'winner' : ''}">
-                            <strong>${m.team2_name}</strong>
-                            ${!concluido ? `<button class="btn-win" onclick="declararVitoria('${docSnap.id}', '${m.team2_id}', '${m.team1_id}')">Venceu</button>` : (isT2Winner ? '<span style="color:var(--primary)">Vencedor</span>' : '')}
+                    container.innerHTML += `
+                        <div class="match-card">
+                            <div class="match-header" style="display: flex; flex-direction:column; gap:5px;">
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span>${m.game}</span>
+                                    <span class="match-time">${m.timeStr}</span>
+                                </div>
+                                <div style="text-align:right;">
+                                    <button class="btn-small-danger" onclick="excluirPartida('${docSnap.id}')">Excluir Duelo</button>
+                                </div>
+                            </div>
+                            <div class="team-row ${isT1Winner ? 'winner' : ''}">
+                                <strong>${m.team1_name}</strong>
+                                ${!concluido ? `<button class="btn-edit" onclick="declararVitoria('${docSnap.id}', '${m.team1_id}')">Venceu</button>` : (isT1Winner ? '<span style="color:var(--primary)">Vencedor</span>' : '')}
+                            </div>
+                            <div class="team-row ${isT2Winner ? 'winner' : ''}">
+                                <strong>${m.team2_name}</strong>
+                                ${!concluido ? `<button class="btn-edit" onclick="declararVitoria('${docSnap.id}', '${m.team2_id}')">Venceu</button>` : (isT2Winner ? '<span style="color:var(--primary)">Vencedor</span>' : '')}
+                            </div>
                         </div>
                     `;
-                    container.appendChild(div);
                 });
             });
-        }
+        };
 
-        window.declararVitoria = async function(matchId, winnerId, loserId) {
-            if(!confirm("Confirmar vitória? A tabela de classificação será atualizada automaticamente.")) return;
+        window.excluirPartida = async function(id) {
+            if(confirm("Excluir esta partida? (Se já havia um vencedor, a vitória NÃO será removida da tabela automaticamente. Edite a equipe se necessário).")) {
+                await deleteDoc(doc(db, "matches", id));
+            }
+        };
+
+        window.declararVitoria = async function(matchId, winnerId) {
+            if(!confirm("Confirmar vitória? A tabela de classificação será atualizada.")) return;
             
             const batch = writeBatch(db);
-            
-            // 1. Marca o vencedor na partida
             batch.update(doc(db, "matches", matchId), { winner_id: winnerId });
             
-            // 2. Adiciona +1 Vitória na Tabela para a equipe
-            // Pega os dados atuais da equipe para somar
-            const teamsSnap = await getDocs(query(collection(db, "teams")));
-            let currentWins = 0;
-            teamsSnap.forEach(t => { if(t.id === winnerId) currentWins = t.data().wins; });
-            batch.update(doc(db, "teams", winnerId), { wins: currentWins + 1 });
+            const t = allTeams.find(x => x.id === winnerId);
+            if(t) batch.update(doc(db, "teams", winnerId), { wins: t.wins + 1 });
 
             await batch.commit();
         };
 
-        // --- 4. CLASSIFICAÇÃO GERAL ---
-        let currentFilter = "Todos";
-        document.getElementById('filter-game').addEventListener('change', (e) => {
-            currentFilter = e.target.value;
-            loadTeams();
-        });
-
-        function loadTeams() {
-            const q = query(collection(db, "teams"), orderBy("wins", "desc"));
-            onSnapshot(q, snapshot => {
-                const list = document.getElementById('ranking-list');
-                list.innerHTML = "";
-                
-                snapshot.forEach(docSnap => {
-                    const t = docSnap.data();
-                    if (currentFilter !== "Todos" && t.game !== currentFilter) return;
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><strong>${t.name}</strong><br><small style="color: var(--text-muted)">${t.class}</small></td>
-                        <td>${t.game}</td>
-                        <td style="color: var(--primary); font-weight: bold; font-size: 1.2rem;">${t.wins}</td>
-                        <td style="font-size: 0.8rem; color: var(--text-muted);">${t.members}</td>
-                    `;
-                    list.appendChild(tr);
-                });
-            });
-        }
     </script>
 </body>
 </html>
