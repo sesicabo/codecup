@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CODECUP - Painel de Administração</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="login-section">
+        <div class="login-box">
+            <h1>CODECUP Login</h1>
+            <input type="email" id="email" placeholder="E-mail do Administrador">
+            <input type="password" id="password" placeholder="Palavra-passe">
+            <button id="btn-login">Entrar</button>
+            <p id="login-error" style="color: #ef4444; text-align: center; margin-top: 1rem; font-size: 0.875rem;"></p>
+        </div>
+    </div>
+
+    <div id="admin-section" class="hidden">
+        <header>
+            <h1>DASHBOARD <span>CODECUP</span></h1>
+            <button id="btn-logout" class="btn-danger">Sair</button>
+        </header>
+
+        <div class="grid-container">
+            <div class="panel">
+                <h2>Registar Equipa</h2>
+                <div style="margin-top: 1rem;">
+                    <input type="text" id="t-name" placeholder="Nome da Equipa">
+                    <input type="text" id="t-class" placeholder="Sala / Turma">
+                    <select id="t-game">
+                        <option value="Brawl Stars">Brawl Stars (10 equipas)</option>
+                        <option value="Fortnite">Fortnite (6 equipas)</option>
+                        <option value="Free Fire">Free Fire (8 equipas)</option>
+                        <option value="Valorant">Valorant (3 equipas)</option>
+                    </select>
+                    <textarea id="t-members" placeholder="Integrantes (separados por vírgula)" rows="3"></textarea>
+                    <button id="btn-save">Gravar no Firebase</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2>Classificação Atual</h2>
+                    <select id="filter-game" style="width: auto; margin-bottom: 0; padding: 0.5rem 1rem;">
+                        <option value="Todos">Ver Todos</option>
+                        <option value="Brawl Stars">Brawl Stars</option>
+                        <option value="Fortnite">Fortnite</option>
+                        <option value="Free Fire">Free Fire</option>
+                        <option value="Valorant">Valorant</option>
+                    </select>
+                </div>
+                
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Equipa / Elementos</th>
+                                <th>Modalidade</th>
+                                <th>Vitórias</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ranking-list">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+        // A SUA CONFIGURAÇÃO OFICIAL DO FIREBASE (CODECUP)
+        const firebaseConfig = {
+            apiKey: "AIzaSyD7flH7shnJj1v7hfOcSxLgbP2jgn8gaW8",
+            authDomain: "codecup-7a34a.firebaseapp.com",
+            projectId: "codecup-7a34a",
+            storageBucket: "codecup-7a34a.firebasestorage.app",
+            messagingSenderId: "231556704857",
+            appId: "1:231556704857:web:eea9103792369163161f48"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Controlo de Fluxo de Autenticação
+        document.getElementById('btn-login').addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (e) {
+                document.getElementById('login-error').innerText = "Acesso negado: " + e.message;
+            }
+        });
+
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('admin-section').classList.remove('hidden');
+                loadTeams();
+            } else {
+                document.getElementById('login-section').classList.remove('hidden');
+                document.getElementById('admin-section').classList.add('hidden');
+            }
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
+
+        // Inserção de dados no Cloud Firestore
+        document.getElementById('btn-save').addEventListener('click', async () => {
+            const name = document.getElementById('t-name').value;
+            const className = document.getElementById('t-class').value;
+            const game = document.getElementById('t-game').value;
+            const members = document.getElementById('t-members').value;
+
+            if(!name || !className || !members) {
+                alert("Por favor, preencha todos os campos antes de salvar.");
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, "teams"), {
+                    name: name,
+                    class: className,
+                    game: game,
+                    members: members,
+                    wins: 0,
+                    createdAt: Date.now()
+                });
+                
+                // Limpar o formulário após o sucesso
+                document.getElementById('t-name').value = '';
+                document.getElementById('t-class').value = '';
+                document.getElementById('t-members').value = '';
+                alert("Equipa registada com sucesso!");
+            } catch (e) {
+                alert("Erro ao ligar ao servidor: " + e.message);
+            }
+        });
+
+        // Monitorização do Filtro de Seleção
+        let currentFilter = "Todos";
+        document.getElementById('filter-game').addEventListener('change', (e) => {
+            currentFilter = e.target.value;
+            loadTeams();
+        });
+
+        // Leitura e atualização da tabela em tempo real (Real-time Listener)
+        function loadTeams() {
+            const q = query(collection(db, "teams"), orderBy("wins", "desc"));
+            
+            onSnapshot(q, snapshot => {
+                const list = document.getElementById('ranking-list');
+                list.innerHTML = "";
+                
+                snapshot.forEach(docSnap => {
+                    const t = docSnap.data();
+                    
+                    // Aplicação do filtro escolhido no painel
+                    if (currentFilter !== "Todos" && t.game !== currentFilter) return;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>
+                            <strong>${t.name}</strong><br>
+                            <span style="font-size: 0.8rem; color: #94a3b8;">${t.class} • Filiação: ${t.members}</span>
+                        </td>
+                        <td style="font-size: 0.9rem;">${t.game}</td>
+                        <td style="font-family: monospace; color: #10b981; font-weight: bold; font-size: 1.15rem;">${t.wins}</td>
+                        <td>
+                            <button onclick="window.updateWin('${docSnap.id}', ${t.wins + 1})" style="width: auto; padding: 0.35rem 0.6rem; font-size: 0.75rem; background-color: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; margin-right: 0.5rem; cursor: pointer;">+1 Vit</button>
+                            <button onclick="window.removeTeam('${docSnap.id}')" class="btn-danger" style="padding: 0.35rem 0.6rem; font-size: 0.75rem; cursor: pointer;">Remover</button>
+                        </td>
+                    `;
+                    list.appendChild(tr);
+                });
+            });
+        }
+
+        // Funções globais para manipulação dos registos da tabela
+        window.updateWin = async (id, newCount) => await updateDoc(doc(db, "teams", id), { wins: newCount });
+        window.removeTeam = async (id) => { if(confirm("Tem a certeza que deseja eliminar esta equipa do campeonato?")) await deleteDoc(doc(db, "teams", id)); };
+    </script>
+</body>
+</html>
