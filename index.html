@@ -3,17 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CODECUP - Gestão Automatizada</title>
+    <title>CODECUP - Dashboard do Torneio</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 1rem; }
-        .edit-mode { border: 2px dashed var(--primary); padding: 1rem; border-radius: 0.5rem; background: rgba(16, 185, 129, 0.05); }
-        .btn-edit { background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem; cursor: pointer; }
-        .btn-edit:hover { background: var(--accent); color: white; }
-        .btn-small-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem; cursor: pointer; }
-        .btn-small-danger:hover { background: var(--danger); color: white; }
-        .actions-cell { display: flex; gap: 5px; }
-        .painel-destaque { background: rgba(59, 130, 246, 0.1); border: 1px solid var(--accent); }
+        /* UI E-sports Específica */
+        .game-hub { background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 0.5rem; margin-top: 1rem; border: 1px solid var(--border-color); }
+        .podium-box { background: linear-gradient(145deg, #1e293b, #0f172a); padding: 2rem; border-radius: 0.5rem; border: 1px solid #c1ff00; text-align: center;}
+        .podium-box select { background: #000; border: 1px solid #c1ff00; font-size: 1.1rem; color: #fff;}
+        
+        .groups-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem; }
+        .group-table { background: rgba(255,255,255,0.02); border-radius: 0.5rem; overflow: hidden; }
+        .group-table th { background: rgba(255,255,255,0.05); color: #fff; text-align: center;}
+        .group-table td { text-align: center; }
+        .group-table tr:nth-child(1), .group-table tr:nth-child(2) { background: rgba(16, 185, 129, 0.1); border-left: 3px solid var(--primary); } /* Destaca os 2 classificados */
+        
+        .valorant-ladder { display: flex; flex-direction: column; gap: 1rem; max-width: 600px; margin: 0 auto; }
+        .match-slot { border-left: 4px solid var(--border-color); padding-left: 1rem; position: relative; }
+        .match-slot.active { border-left-color: var(--accent); }
+        .match-slot.final { border-left-color: #fbbf24; }
+        
+        .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-size: 0.7rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .bg-blue { background: #3b82f6; color: #fff; }
+        .bg-yellow { background: #fbbf24; color: #000; }
+        .bg-red { background: #ef4444; color: #fff; }
     </style>
 </head>
 <body>
@@ -23,157 +35,71 @@
             <h1>CODECUP Admin</h1>
             <input type="email" id="email" placeholder="E-mail">
             <input type="password" id="password" placeholder="Senha">
-            <button id="btn-login">Acessar Sistema</button>
+            <button id="btn-login">Acessar Hub</button>
             <p id="login-error" style="color: var(--danger); text-align: center; margin-top: 1rem;"></p>
         </div>
     </div>
 
     <div id="admin-section" class="hidden">
         <header>
-            <h1>GESTÃO <span>CODECUP</span></h1>
-            <button id="btn-logout" class="btn-danger">Encerrar Sessão</button>
+            <h1>HUB DE TORNEIO <span>CODECUP</span></h1>
+            <button id="btn-logout" class="btn-danger">Sair</button>
         </header>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="showTab('tab-cadastro')">1. Equipes (Inscrições)</button>
-            <button class="tab-btn" onclick="showTab('tab-duelos')">2. Gerador de Duelos & Horários</button>
-            <button class="tab-btn" onclick="showTab('tab-classificacao')">3. Classificação</button>
+            <button class="tab-btn active" onclick="showTab('tab-cadastro')">1. Equipes</button>
+            <button class="tab-btn" onclick="showTab('tab-torneio')">2. Gestão de Chaves e Duelos</button>
         </div>
 
-        <!-- ABA 1: CADASTRO E EDIÇÃO DE EQUIPES -->
         <div id="tab-cadastro" class="tab-content">
             <div class="grid-2">
-                <div class="panel" id="form-equipe-container">
-                    <h2 id="form-equipe-titulo">Registrar Nova Equipe</h2>
-                    <input type="hidden" id="t-id">
+                <div class="panel">
+                    <h2>Registrar Nova Equipe</h2>
                     <input type="text" id="t-name" placeholder="Nome da Equipe">
-                    <input type="text" id="t-class" placeholder="Sala / Turma (Ex: 3º Ano A)">
+                    <input type="text" id="t-class" placeholder="Sala / Turma">
                     <select id="t-game">
                         <option value="Brawl Stars">Brawl Stars</option>
                         <option value="Fortnite">Fortnite</option>
                         <option value="Free Fire">Free Fire</option>
                         <option value="Valorant">Valorant</option>
                     </select>
-                    <textarea id="t-members" placeholder="Nome dos Alunos (separados por vírgula)" rows="3"></textarea>
-                    <div style="display: flex; gap: 10px;">
-                        <button id="btn-save-team">Salvar Equipe</button>
-                        <button id="btn-cancel-edit-team" class="hidden btn-danger" onclick="cancelarEdicaoEquipe()">Cancelar</button>
-                    </div>
+                    <textarea id="t-members" placeholder="Membros (vírgula)" rows="2"></textarea>
+                    <button id="btn-save-team">Salvar Equipe</button>
                 </div>
-
                 <div class="panel">
                     <h2>Equipes Cadastradas</h2>
-                    <div style="overflow-y: auto; max-height: 400px;">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Equipe</th>
-                                    <th>Modalidade</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="lista-equipes-crud">
-                                <!-- Gerado via JS -->
-                            </tbody>
-                        </table>
+                    <div style="overflow-y: auto; max-height: 350px;">
+                        <table><tbody id="lista-equipes-crud"></tbody></table>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ABA 2: GERADOR AUTOMÁTICO DE DUELOS E HORÁRIOS -->
-        <div id="tab-duelos" class="tab-content hidden">
-            
-            <div class="panel painel-destaque">
-                <h2>Gerador Automático de Chaves</h2>
-                <p style="font-size: 0.9rem; margin-bottom: 1.5rem;">Selecione a modalidade e defina os horários. O sistema fará um sorteio aleatório das equipes, montará os confrontos e aplicará os horários pulando o intervalo.</p>
-                
-                <div class="config-grid">
-                    <div>
-                        <label style="font-size: 0.8rem; font-weight: bold; color: var(--accent);">Modalidade</label>
-                        <select id="gerar-modalidade">
-                            <option value="Brawl Stars">Brawl Stars</option>
-                            <option value="Fortnite">Fortnite</option>
-                            <option value="Free Fire">Free Fire</option>
-                            <option value="Valorant">Valorant</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="font-size: 0.8rem;">Dia do Evento</label>
-                        <select id="cfg-dia">
-                            <option value="Dia 17">Dia 17</option>
-                            <option value="Dia 18">Dia 18</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="font-size: 0.8rem;">Início do Torneio</label>
-                        <input type="time" id="cfg-inicio" value="08:00">
-                    </div>
-                    <div>
-                        <label style="font-size: 0.8rem;">Duração da Partida (min)</label>
-                        <input type="number" id="cfg-duracao" value="40">
-                    </div>
-                </div>
-                
-                <div class="config-grid">
-                    <div>
-                        <label style="font-size: 0.8rem; color: var(--danger);">Início do Intervalo</label>
-                        <input type="time" id="cfg-int-inicio" value="12:00">
-                    </div>
-                    <div>
-                        <label style="font-size: 0.8rem; color: var(--danger);">Fim do Intervalo</label>
-                        <input type="time" id="cfg-int-fim" value="13:00">
-                    </div>
-                </div>
-                
-                <button onclick="gerarDuelosAutomaticos()" style="background-color: var(--accent); margin-top: 1rem; padding: 1rem; font-size: 1.1rem;">🎲 Sortear Duelos e Aplicar Horários</button>
-            </div>
-
-            <!-- Painel de Lista de Partidas -->
-            <div class="panel mt-4">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h2>Partidas do Campeonato</h2>
-                    <select id="filtro-partidas" style="width: auto; margin: 0;" onchange="loadMatches()">
-                        <option value="Todas">Ver Todas</option>
-                        <option value="Brawl Stars">Brawl Stars</option>
-                        <option value="Fortnite">Fortnite</option>
-                        <option value="Free Fire">Free Fire</option>
-                        <option value="Valorant">Valorant</option>
+        <div id="tab-torneio" class="tab-content hidden">
+            <div class="panel" style="margin-bottom: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <h2 style="margin: 0;">Selecione a Modalidade:</h2>
+                    <select id="hub-selector" style="width: 300px; margin: 0; font-size: 1.1rem; background: var(--accent); color: white; border: none;" onchange="loadGameHub()">
+                        <option value="">-- Escolha --</option>
+                        <option value="Free Fire">Free Fire (Battle Royale)</option>
+                        <option value="Fortnite">Fortnite (Battle Royale)</option>
+                        <option value="Brawl Stars">Brawl Stars (Grupos + Finais)</option>
+                        <option value="Valorant">Valorant (Rei da Mesa)</option>
                     </select>
                 </div>
-                
-                <div id="matches-container" class="match-grid">
-                    <!-- Gerado via JS -->
-                </div>
             </div>
-        </div>
 
-        <!-- ABA 3: CLASSIFICAÇÃO -->
-        <div id="tab-classificacao" class="tab-content hidden">
-            <div class="panel">
-                <h2>Tabela de Resultados</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Equipe / Turma</th>
-                            <th>Modalidade</th>
-                            <th>Vitórias</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ranking-list">
-                        <!-- Gerado via JS -->
-                    </tbody>
-                </table>
+            <div id="game-container" class="panel" style="border-top-left-radius: 0; border-top-right-radius: 0; min-height: 400px;">
+                <p style="text-align: center; color: var(--text-muted); margin-top: 3rem;">Selecione uma modalidade acima para abrir o painel de controle.</p>
             </div>
         </div>
 
     </div>
 
-    <!-- FIREBASE & LÓGICA -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, where, doc, updateDoc, deleteDoc, getDocs, writeBatch, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyD7flH7shnJj1v7hfOcSxLgbP2jgn8gaW8",
@@ -189,8 +115,9 @@
         const db = getFirestore(app);
 
         let allTeams = [];
+        let unsubscribeHub = null; // Para limpar listeners antigos ao trocar de aba
 
-        // --- NAVEGAÇÃO ---
+        // --- SISTEMA BASE ---
         window.showTab = function(tabId) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -198,16 +125,16 @@
             event.currentTarget.classList.add('active');
         };
 
-        // --- AUTH ---
         document.getElementById('btn-login').addEventListener('click', async () => {
             try { await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); } 
             catch (e) { document.getElementById('login-error').innerText = "Erro: " + e.message; }
         });
+
         onAuthStateChanged(auth, user => {
             if (user) {
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('admin-section').classList.remove('hidden');
-                initSystem();
+                loadTeamsGlobally();
             } else {
                 document.getElementById('login-section').classList.remove('hidden');
                 document.getElementById('admin-section').classList.add('hidden');
@@ -215,223 +142,351 @@
         });
         document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
 
-        function initSystem() {
-            loadTeams();
-            loadMatches();
-        }
-
-        // --- 1. CRUD DE EQUIPES ---
+        // Cadastro Simplificado
         document.getElementById('btn-save-team').addEventListener('click', async () => {
-            const id = document.getElementById('t-id').value;
             const name = document.getElementById('t-name').value;
             const className = document.getElementById('t-class').value;
             const game = document.getElementById('t-game').value;
-            const members = document.getElementById('t-members').value;
-
             if(!name || !className) return alert("Preencha Nome e Turma!");
-            
-            if(id) {
-                await updateDoc(doc(db, "teams", id), { name, class: className, game, members });
-                cancelarEdicaoEquipe();
-            } else {
-                await addDoc(collection(db, "teams"), { name, class: className, game, members, wins: 0, createdAt: Date.now() });
-                document.getElementById('t-name').value = '';
-                document.getElementById('t-members').value = '';
-            }
+            await addDoc(collection(db, "teams"), { name, class: className, game, members: document.getElementById('t-members').value, wins: 0 });
+            document.getElementById('t-name').value = ''; document.getElementById('t-members').value = '';
         });
 
-        function loadTeams() {
-            const q = query(collection(db, "teams"), orderBy("wins", "desc"));
-            onSnapshot(q, snapshot => {
+        function loadTeamsGlobally() {
+            onSnapshot(collection(db, "teams"), snapshot => {
                 allTeams = [];
-                const listaCrud = document.getElementById('lista-equipes-crud');
-                const listaRanking = document.getElementById('ranking-list');
-                listaCrud.innerHTML = ""; listaRanking.innerHTML = "";
-                
+                const lista = document.getElementById('lista-equipes-crud');
+                lista.innerHTML = "";
                 snapshot.forEach(docSnap => {
                     const t = { id: docSnap.id, ...docSnap.data() };
                     allTeams.push(t);
-
-                    listaCrud.innerHTML += `
-                        <tr>
-                            <td><strong>${t.name}</strong><br><small style="color:var(--text-muted)">${t.class}</small></td>
-                            <td>${t.game}</td>
-                            <td class="actions-cell">
-                                <button class="btn-edit" onclick="editarEquipe('${t.id}')">Editar</button>
-                                <button class="btn-small-danger" onclick="excluirEquipe('${t.id}')">X</button>
-                            </td>
-                        </tr>
-                    `;
-                    listaRanking.innerHTML += `
-                        <tr>
-                            <td><strong>${t.name}</strong><br><small style="color:var(--text-muted)">${t.class}</small></td>
-                            <td>${t.game}</td>
-                            <td style="color:var(--primary); font-weight:bold; font-size:1.2rem;">${t.wins}</td>
-                        </tr>
-                    `;
+                    lista.innerHTML += `<tr><td><strong>${t.name}</strong><br><small>${t.class}</small></td><td>${t.game}</td><td><button class="btn-small-danger" onclick="window.excluirEquipe('${t.id}')">X</button></td></tr>`;
                 });
+                if(document.getElementById('hub-selector').value) window.loadGameHub(); // Re-renderiza o hub se houver mudança de times
+            });
+        }
+        window.excluirEquipe = async id => { if(confirm("Excluir?")) await deleteDoc(doc(db, "teams", id)); };
+
+
+        // ==========================================
+        // ENGENHARIA DO HUB DE TORNEIO (UX/UI E-SPORTS)
+        // ==========================================
+
+        window.loadGameHub = function() {
+            if(unsubscribeHub) { unsubscribeHub(); unsubscribeHub = null; }
+            const game = document.getElementById('hub-selector').value;
+            const container = document.getElementById('game-container');
+            if(!game) return container.innerHTML = "<p style='text-align:center;'>Selecione uma modalidade.</p>";
+
+            const teams = allTeams.filter(t => t.game === game);
+
+            if(game === "Free Fire" || game === "Fortnite") {
+                renderBattleRoyaleUI(game, teams, container);
+            } else if (game === "Brawl Stars") {
+                renderBrawlStarsUI(teams, container);
+            } else if (game === "Valorant") {
+                renderValorantUI(teams, container);
+            }
+        };
+
+        // ------------------------------------------
+        // 1. MODALIDADE BATTLE ROYALE
+        // ------------------------------------------
+        async function renderBattleRoyaleUI(game, teams, container) {
+            let options = '<option value="">-- Nenhuma Selecionada --</option>';
+            teams.forEach(t => options += `<option value="${t.id}">${t.name} (${t.class})</option>`);
+
+            container.innerHTML = `
+                <div class="grid-2">
+                    <div>
+                        <h3 style="color: var(--primary);">Lobby - Inscritos (${teams.length})</h3>
+                        <table class="group-table" style="width:100%; text-align:left;">
+                            ${teams.map(t => `<tr><td style="padding: 10px; text-align:left;"><strong>${t.name}</strong> <small style="color:gray">${t.class}</small></td></tr>`).join('')}
+                        </table>
+                    </div>
+                    <div class="podium-box">
+                        <h3 style="color: #fbbf24; font-size: 1.8rem; margin-top:0;">COROAÇÃO</h3>
+                        <p style="color:gray; font-size: 0.9rem; margin-bottom: 2rem;">Selecione manualmente as posições finais após o término das quedas.</p>
+                        
+                        <div style="margin-bottom: 1rem; text-align:left;">
+                            <label style="color:#fbbf24; font-weight:bold;">🥇 1º Lugar (Campeão)</label>
+                            <select id="br-pos1">${options}</select>
+                        </div>
+                        <div style="margin-bottom: 1rem; text-align:left;">
+                            <label style="color:#94a3b8; font-weight:bold;">🥈 2º Lugar</label>
+                            <select id="br-pos2">${options}</select>
+                        </div>
+                        <div style="margin-bottom: 1rem; text-align:left;">
+                            <label style="color:#b45309; font-weight:bold;">🥉 3º Lugar</label>
+                            <select id="br-pos3">${options}</select>
+                        </div>
+                        <button onclick="salvarPodioBR('${game}')" style="background: var(--primary); margin-top: 1rem;">Confirmar Resultado Oficial</button>
+                    </div>
+                </div>
+            `;
+
+            // Carrega estado salvo se existir
+            const docRef = await getDoc(doc(db, "podiums", game));
+            if(docRef.exists()) {
+                const data = docRef.data();
+                document.getElementById('br-pos1').value = data.pos1 || '';
+                document.getElementById('br-pos2').value = data.pos2 || '';
+                document.getElementById('br-pos3').value = data.pos3 || '';
+            }
+        }
+        window.salvarPodioBR = async (game) => {
+            await setDoc(doc(db, "podiums", game), {
+                pos1: document.getElementById('br-pos1').value,
+                pos2: document.getElementById('br-pos2').value,
+                pos3: document.getElementById('br-pos3').value
+            });
+            alert("Pódio salvo e sincronizado!");
+        };
+
+        // ------------------------------------------
+        // 2. MODALIDADE BRAWL STARS (GRUPOS + PLAYOFFS)
+        // ------------------------------------------
+        function renderBrawlStarsUI(teams, container) {
+            container.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                    <h3>Gestão de Grupos</h3>
+                    <button onclick="gerarGruposBrawl()" style="width:auto; background:var(--accent);">Sortear e Criar Grupos</button>
+                </div>
+                <div id="bs-board">Aguardando sorteio...</div>
+            `;
+
+            const q = query(collection(db, "brawl_matches"), orderBy("match_id", "asc"));
+            unsubscribeHub = onSnapshot(q, snapshot => {
+                let matches = [];
+                snapshot.forEach(d => matches.push({docId: d.id, ...d.data()}));
+                
+                if(matches.length === 0) return;
+
+                // Calcula as tabelas baseadas nas vitórias dentro dos grupos
+                let scores = {};
+                teams.forEach(t => scores[t.id] = { name: t.name, class: t.class, wins: 0, group: t.group });
+                
+                let htmlGrupos = { A: '', B: '' };
+                let htmlPartidas = { A: '', B: '', Semis: '', Final: '' };
+
+                matches.forEach(m => {
+                    // Soma vitórias
+                    if(m.winner_id && scores[m.winner_id]) scores[m.winner_id].wins++;
+
+                    // Constrói visual das partidas
+                    const isGroup = m.type === 'grupo';
+                    const concluida = m.winner_id !== null;
+                    const matchHtml = `
+                        <div class="match-card" style="margin-bottom: 10px; padding: 10px;">
+                            <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:5px;">${m.label || 'Partida'}</div>
+                            <div class="team-row ${m.winner_id === m.t1_id ? 'winner' : ''}" style="margin-bottom:2px;">
+                                <span>${m.t1_name}</span>
+                                ${!concluida && m.t1_id ? `<button class="btn-win" onclick="setWinnerBrawl('${m.docId}', '${m.t1_id}')">Venceu</button>` : ''}
+                            </div>
+                            <div class="team-row ${m.winner_id === m.t2_id ? 'winner' : ''}">
+                                <span>${m.t2_name}</span>
+                                ${!concluida && m.t2_id ? `<button class="btn-win" onclick="setWinnerBrawl('${m.docId}', '${m.t2_id}')">Venceu</button>` : ''}
+                            </div>
+                        </div>
+                    `;
+
+                    if(isGroup) htmlPartidas[m.group] += matchHtml;
+                    else if (m.type === 'semi') htmlPartidas.Semis += matchHtml;
+                    else if (m.type === 'final') htmlPartidas.Final += matchHtml;
+                });
+
+                // Ordena Grupos
+                ['A', 'B'].forEach(g => {
+                    let groupTeams = Object.values(scores).filter(t => t.group === g).sort((a,b) => b.wins - a.wins);
+                    htmlGrupos[g] = groupTeams.map((t, idx) => `<tr><td style="color:var(--text-muted); font-size:0.8rem;">${idx+1}º</td><td><strong>${t.name}</strong></td><td style="color:var(--primary); font-weight:bold;">${t.wins}</td></tr>`).join('');
+                });
+
+                document.getElementById('bs-board').innerHTML = `
+                    <div class="groups-layout">
+                        <div>
+                            <h4 style="text-align:center; background:#1e293b; margin:0; padding:10px; border-radius:5px 5px 0 0;">GRUPO A</h4>
+                            <table class="group-table">
+                                <tr><th>#</th><th>Equipe</th><th>Vitórias</th></tr>
+                                ${htmlGrupos.A}
+                            </table>
+                            <h5 style="margin-top:1.5rem; color:var(--accent);">Confrontos do Grupo A</h5>
+                            <div style="max-height: 300px; overflow-y:auto; padding-right:10px;">${htmlPartidas.A}</div>
+                        </div>
+                        <div>
+                            <h4 style="text-align:center; background:#1e293b; margin:0; padding:10px; border-radius:5px 5px 0 0;">GRUPO B</h4>
+                            <table class="group-table">
+                                <tr><th>#</th><th>Equipe</th><th>Vitórias</th></tr>
+                                ${htmlGrupos.B}
+                            </table>
+                            <h5 style="margin-top:1.5rem; color:var(--accent);">Confrontos do Grupo B</h5>
+                            <div style="max-height: 300px; overflow-y:auto; padding-right:10px;">${htmlPartidas.B}</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 3rem; padding-top: 2rem; border-top: 2px dashed var(--border-color);">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h3 style="color: #fbbf24;">PLAYOFFS (Fase Final)</h3>
+                            <button onclick="gerarPlayoffsBrawl()" style="width:auto; background:#fbbf24; color:black;">Gerar Chaves Finais</button>
+                        </div>
+                        <p style="font-size:0.8rem; color:gray;">Gera as Semifinais cruzando o 1ºA vs 2ºB e 1ºB vs 2ºA baseado na tabela atual acima.</p>
+                        <div class="groups-layout">
+                            <div><h4 style="color:#94a3b8">Semifinais</h4>${htmlPartidas.Semis}</div>
+                            <div><h4 style="color:#fbbf24">Grande Final</h4>${htmlPartidas.Final}</div>
+                        </div>
+                    </div>
+                `;
             });
         }
 
-        window.editarEquipe = function(id) {
-            const t = allTeams.find(x => x.id === id);
-            if(!t) return;
-            document.getElementById('t-id').value = t.id;
-            document.getElementById('t-name').value = t.name;
-            document.getElementById('t-class').value = t.class;
-            document.getElementById('t-game').value = t.game;
-            document.getElementById('t-members').value = t.members;
+        window.setWinnerBrawl = async (docId, winnerId) => await updateDoc(doc(db, "brawl_matches", docId), { winner_id: winnerId });
+
+        window.gerarGruposBrawl = async () => {
+            const teams = allTeams.filter(t => t.game === "Brawl Stars");
+            if(teams.length !== 10) return alert("Brawl Stars precisa de exatamente 10 equipes cadastradas para este formato!");
+            if(!confirm("Isto apagará chaves existentes e sorteará novos grupos. Confirmar?")) return;
+
+            // Embaralha e divide
+            teams.sort(() => Math.random() - 0.5);
+            const batch = writeBatch(db);
             
-            document.getElementById('form-equipe-container').classList.add('edit-mode');
-            document.getElementById('form-equipe-titulo').innerText = "Editando Equipe";
-            document.getElementById('btn-save-team').innerText = "Atualizar Cadastro";
-            document.getElementById('btn-cancel-edit-team').classList.remove('hidden');
-        };
+            // Apaga estado antigo
+            const oldMatches = await getDocs(collection(db, "brawl_matches"));
+            oldMatches.forEach(d => batch.delete(d.ref));
 
-        window.cancelarEdicaoEquipe = function() {
-            document.getElementById('t-id').value = "";
-            document.getElementById('t-name').value = "";
-            document.getElementById('t-members').value = "";
-            document.getElementById('form-equipe-container').classList.remove('edit-mode');
-            document.getElementById('form-equipe-titulo').innerText = "Registrar Nova Equipe";
-            document.getElementById('btn-save-team').innerText = "Salvar Equipe";
-            document.getElementById('btn-cancel-edit-team').classList.add('hidden');
-        };
-
-        window.excluirEquipe = async function(id) {
-            if(confirm("Excluir esta equipe permanentemente?")) {
-                await deleteDoc(doc(db, "teams", id));
-            }
-        };
-
-        // --- 2. GERADOR AUTOMÁTICO DE DUELOS (RANDOM) + HORÁRIOS ---
-        window.gerarDuelosAutomaticos = async function() {
-            const mod = document.getElementById('gerar-modalidade').value;
-            const dia = document.getElementById('cfg-dia').value;
-            const duracaoMin = parseInt(document.getElementById('cfg-duracao').value);
+            let gA = teams.slice(0, 5); let gB = teams.slice(5, 10);
             
-            // Funções utilitárias de tempo
-            const strToMins = (str) => { const [h,m] = str.split(':'); return parseInt(h)*60 + parseInt(m); };
-            const minsToStr = (mins) => { 
-                const h = Math.floor(mins/60).toString().padStart(2, '0');
-                const m = (mins%60).toString().padStart(2, '0');
-                return `${h}:${m}`;
+            // Salva marcação do grupo nas equipes
+            gA.forEach(t => batch.update(doc(db, "teams", t.id), { group: 'A' }));
+            gB.forEach(t => batch.update(doc(db, "teams", t.id), { group: 'B' }));
+
+            // Gera confrontos diretos (Round Robin)
+            let matchId = 1;
+            const makeMatches = (grp, label) => {
+                for(let i=0; i<grp.length; i++) {
+                    for(let j=i+1; j<grp.length; j++) {
+                        batch.set(doc(collection(db, "brawl_matches")), {
+                            match_id: matchId++, type: 'grupo', group: label,
+                            t1_id: grp[i].id, t1_name: grp[i].name,
+                            t2_id: grp[j].id, t2_name: grp[j].name,
+                            winner_id: null
+                        });
+                    }
+                }
             };
+            makeMatches(gA, 'A'); makeMatches(gB, 'B');
+            await batch.commit();
+        };
 
-            let tempoAtual = strToMins(document.getElementById('cfg-inicio').value);
-            const intInicio = strToMins(document.getElementById('cfg-int-inicio').value);
-            const intFim = strToMins(document.getElementById('cfg-int-fim').value);
-
-            // Filtra as equipes da modalidade selecionada
-            let equipesFiltradas = allTeams.filter(t => t.game === mod);
-
-            if(equipesFiltradas.length < 2) return alert("É necessário pelo menos 2 equipes inscritas nesta modalidade para gerar duelos.");
-
-            if(!confirm(`Isto criará duelos aleatórios e distribuirá os horários para ${mod}. Confirma?`)) return;
-
-            // Lógica de Embaralhamento (Sorteio Aleatório)
-            for (let i = equipesFiltradas.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [equipesFiltradas[i], equipesFiltradas[j]] = [equipesFiltradas[j], equipesFiltradas[i]];
-            }
+        window.gerarPlayoffsBrawl = async () => {
+            // Calcula pontuação atual dos grupos (simples e direto da tabela do DOM)
+            // Em um sistema robusto buscaríamos do BD, aqui faremos de forma pragmática baseada nas vitórias já calculadas
+            const scores = {};
+            const matches = await getDocs(query(collection(db, "brawl_matches"), where("type", "==", "grupo")));
+            const teamsData = allTeams.filter(t => t.game === "Brawl Stars");
+            teamsData.forEach(t => scores[t.id] = { id: t.id, name: t.name, group: t.group, wins: 0 });
+            
+            matches.forEach(m => { if(m.data().winner_id) scores[m.data().winner_id].wins++; });
+            
+            const gA = Object.values(scores).filter(t => t.group === 'A').sort((a,b) => b.wins - a.wins);
+            const gB = Object.values(scores).filter(t => t.group === 'B').sort((a,b) => b.wins - a.wins);
 
             const batch = writeBatch(db);
-            let ordemMatch = 1;
-
-            // Formar os pares (1v1)
-            for (let i = 0; i < equipesFiltradas.length; i += 2) {
-                const t1 = equipesFiltradas[i];
-                const t2 = equipesFiltradas[i+1]; // Pode ser undefined se o número de equipes for ímpar
-
-                // Checa se cruza o intervalo. Se sim, joga a partida para depois do intervalo.
-                if ((tempoAtual + duracaoMin) > intInicio && tempoAtual < intFim) {
-                    tempoAtual = intFim;
-                }
-
-                const horarioFormatado = `${dia} - ${minsToStr(tempoAtual)}`;
-                
-                // Tratar número ímpar (BYE = avança direto)
-                let t2_id = t2 ? t2.id : "bye";
-                let t2_name = t2 ? t2.name : "🏆 Avança p/ Próxima Fase";
-                let winner_id = t2 ? null : t1.id; // Se não tem t2, t1 ganha automaticamente.
-
-                const matchRef = doc(collection(db, "matches"));
-                batch.set(matchRef, {
-                    game: mod,
-                    timeStr: horarioFormatado,
-                    team1_id: t1.id, team1_name: t1.name,
-                    team2_id: t2_id, team2_name: t2_name,
-                    winner_id: winner_id,
-                    createdAt: Date.now() + ordemMatch
-                });
-
-                // Avança o relógio apenas se for uma partida real (se for BYE, não gasta horário)
-                if (t2) {
-                    tempoAtual += duracaoMin;
-                }
-                ordemMatch++;
-            }
+            
+            // Cria Semi 1 (1A x 2B)
+            batch.set(doc(collection(db, "brawl_matches"), "semi1"), {
+                match_id: 100, type: 'semi', label: 'Semi 1 (1º Grupo A vs 2º Grupo B)',
+                t1_id: gA[0].id, t1_name: gA[0].name, t2_id: gB[1].id, t2_name: gB[1].name, winner_id: null
+            });
+            // Cria Semi 2 (1B x 2A)
+            batch.set(doc(collection(db, "brawl_matches"), "semi2"), {
+                match_id: 101, type: 'semi', label: 'Semi 2 (1º Grupo B vs 2º Grupo A)',
+                t1_id: gB[0].id, t1_name: gB[0].name, t2_id: gA[1].id, t2_name: gA[1].name, winner_id: null
+            });
+            // Cria Final (Bloqueada)
+            batch.set(doc(collection(db, "brawl_matches"), "final"), {
+                match_id: 102, type: 'final', label: '🏆 GRANDE FINAL',
+                t1_id: null, t1_name: 'Vencedor Semi 1', t2_id: null, t2_name: 'Vencedor Semi 2', winner_id: null
+            });
 
             await batch.commit();
-            alert("Chaveamento aleatório gerado e horários aplicados!");
         };
 
-        // --- 3. EXIBIR E GERENCIAR DUELOS ---
-        window.loadMatches = function() {
-            const filtro = document.getElementById('filtro-partidas').value;
-            const q = query(collection(db, "matches"), orderBy("createdAt", "asc"));
-            
-            onSnapshot(q, snapshot => {
-                const container = document.getElementById('matches-container');
-                container.innerHTML = "";
-                
+        // Escuta mudança nas Semis para injetar na Final automaticamente
+        onSnapshot(doc(db, "brawl_matches", "semi1"), doc => { if(doc.exists() && doc.data().winner_id) updateDoc(doc.ref.firestore.doc('brawl_matches/final'), { t1_id: doc.data().winner_id, t1_name: doc.data().winner_id === doc.data().t1_id ? doc.data().t1_name : doc.data().t2_name }); });
+        onSnapshot(doc(db, "brawl_matches", "semi2"), doc => { if(doc.exists() && doc.data().winner_id) updateDoc(doc.ref.firestore.doc('brawl_matches/final'), { t2_id: doc.data().winner_id, t2_name: doc.data().winner_id === doc.data().t1_id ? doc.data().t1_name : doc.data().t2_name }); });
+
+        // ------------------------------------------
+        // 3. MODALIDADE VALORANT (REI DA MESA)
+        // ------------------------------------------
+        function renderValorantUI(teams, container) {
+            container.innerHTML = `
+                <div style="text-align:center; margin-bottom: 2rem;">
+                    <h3 style="color: #ef4444; font-size:1.5rem;">Formato: King of the Hill (Escada)</h3>
+                    <button onclick="sortearValorant()" style="width: auto; padding: 10px 20px; background: #ef4444; color:white;">Iniciar Chaveamento (Sorteio Aleatório)</button>
+                </div>
+                <div id="val-board" class="valorant-ladder"></div>
+            `;
+
+            const q = query(collection(db, "val_matches"), orderBy("id", "asc"));
+            unsubscribeHub = onSnapshot(q, snapshot => {
+                const board = document.getElementById('val-board');
+                board.innerHTML = "";
                 snapshot.forEach(docSnap => {
                     const m = docSnap.data();
-                    if(filtro !== "Todas" && m.game !== filtro) return;
-
-                    const isT1Winner = m.winner_id === m.team1_id;
-                    const isT2Winner = m.winner_id === m.team2_id;
-                    const concluido = m.winner_id !== null;
-
-                    container.innerHTML += `
-                        <div class="match-card">
-                            <div class="match-header" style="display: flex; flex-direction:column; gap:5px;">
-                                <div style="display:flex; justify-content:space-between;">
-                                    <span>${m.game}</span>
-                                    <span class="match-time">${m.timeStr}</span>
-                                </div>
-                                <div style="text-align:right;">
-                                    <button class="btn-small-danger" onclick="excluirPartida('${docSnap.id}')">Excluir Duelo</button>
-                                </div>
+                    const concluida = m.winner_id !== null;
+                    const destrancada = m.t1_id && m.t2_id;
+                    
+                    board.innerHTML += `
+                        <div class="match-card match-slot ${destrancada ? 'active' : ''} ${m.id === 4 ? 'final' : ''}">
+                            <div class="badge ${m.id === 4 ? 'bg-yellow' : 'bg-blue'}">${m.label}</div>
+                            <div class="team-row ${m.winner_id === m.t1_id ? 'winner' : ''}">
+                                <span style="${!m.t1_id ? 'color:gray; font-style:italic' : ''}">${m.t1_name}</span>
+                                ${destrancada && !concluida ? `<button class="btn-win" onclick="processarVitoriaValorant('${docSnap.id}', 1, '${m.t1_id}', '${m.t1_name}', '${m.t2_id}', '${m.t2_name}')">Venceu</button>` : ''}
                             </div>
-                            <div class="team-row ${isT1Winner ? 'winner' : ''}">
-                                <strong>${m.team1_name}</strong>
-                                ${!concluido ? `<button class="btn-edit" onclick="declararVitoria('${docSnap.id}', '${m.team1_id}')">Venceu</button>` : (isT1Winner ? '<span style="color:var(--primary)">Vencedor</span>' : '')}
-                            </div>
-                            <div class="team-row ${isT2Winner ? 'winner' : ''}">
-                                <strong style="${m.team2_id === 'bye' ? 'color:#fbbf24' : ''}">${m.team2_name}</strong>
-                                ${!concluido && m.team2_id !== 'bye' ? `<button class="btn-edit" onclick="declararVitoria('${docSnap.id}', '${m.team2_id}')">Venceu</button>` : (isT2Winner ? '<span style="color:var(--primary)">Vencedor</span>' : '')}
+                            <div class="team-row ${m.winner_id === m.t2_id ? 'winner' : ''}">
+                                <span style="${!m.t2_id ? 'color:gray; font-style:italic' : ''}">${m.t2_name}</span>
+                                ${destrancada && !concluida ? `<button class="btn-win" onclick="processarVitoriaValorant('${docSnap.id}', 2, '${m.t2_id}', '${m.t2_name}', '${m.t1_id}', '${m.t1_name}')">Venceu</button>` : ''}
                             </div>
                         </div>
                     `;
                 });
             });
-        };
+        }
 
-        window.excluirPartida = async function(id) {
-            if(confirm("Excluir esta partida permanentemente?")) {
-                await deleteDoc(doc(db, "matches", id));
-            }
-        };
+        window.sortearValorant = async () => {
+            const teams = allTeams.filter(t => t.game === "Valorant");
+            if(teams.length !== 3) return alert("Valorant requer exatamente 3 equipes para o Formato Escada!");
+            if(!confirm("Isto reiniciará a escalada. Confirmar?")) return;
 
-        window.declararVitoria = async function(matchId, winnerId) {
-            if(!confirm("Confirmar vitória? A equipe subirá na classificação automaticamente.")) return;
-            
+            teams.sort(() => Math.random() - 0.5); // Embaralha
             const batch = writeBatch(db);
-            batch.update(doc(db, "matches", matchId), { winner_id: winnerId });
             
-            const t = allTeams.find(x => x.id === winnerId);
-            if(t) batch.update(doc(db, "teams", winnerId), { wins: t.wins + 1 });
+            // M1: T1 vs T2
+            batch.set(doc(db, "val_matches", "m1"), { id: 1, label: 'Partida 1', t1_id: teams[0].id, t1_name: teams[0].name, t2_id: teams[1].id, t2_name: teams[1].name, winner_id: null });
+            // M2: Vencedor M1 vs T3
+            batch.set(doc(db, "val_matches", "m2"), { id: 2, label: 'Partida 2 (Acesso Final)', t1_id: null, t1_name: 'Vencedor P1', t2_id: teams[2].id, t2_name: teams[2].name, winner_id: null });
+            // M3: Perdedor M1 vs Perdedor M2
+            batch.set(doc(db, "val_matches", "m3"), { id: 3, label: 'Partida 3 (Repescagem Final)', t1_id: null, t1_name: 'Perdedor P1', t2_id: null, t2_name: 'Perdedor P2', winner_id: null });
+            // M4: Final
+            batch.set(doc(db, "val_matches", "m4"), { id: 4, label: '🏆 GRANDE FINAL', t1_id: null, t1_name: 'Vencedor P2', t2_id: null, t2_name: 'Vencedor P3', winner_id: null });
+
+            await batch.commit();
+        };
+
+        window.processarVitoriaValorant = async (docId, btnPos, winId, winName, loseId, loseName) => {
+            const batch = writeBatch(db);
+            batch.update(doc(db, "val_matches", docId), { winner_id: winId }); // Marca vencedor
+
+            // A Mágica do UX (Fluxo em Cascata): Injeta dinamicamente os times na próxima chave!
+            if(docId === "m1") {
+                batch.update(doc(db, "val_matches", "m2"), { t1_id: winId, t1_name: winName }); // Vencedor vai pra P2
+                batch.update(doc(db, "val_matches", "m3"), { t1_id: loseId, t1_name: loseName }); // Perdedor vai pra P3
+            } else if(docId === "m2") {
+                batch.update(doc(db, "val_matches", "m4"), { t1_id: winId, t1_name: winName }); // Vencedor da P2 vai pra Final
+                batch.update(doc(db, "val_matches", "m3"), { t2_id: loseId, t2_name: loseName }); // Perdedor da P2 vai pra P3
+            } else if(docId === "m3") {
+                batch.update(doc(db, "val_matches", "m4"), { t2_id: winId, t2_name: winName }); // Vencedor da Repescagem vai pra Final
+            }
 
             await batch.commit();
         };
