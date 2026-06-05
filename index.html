@@ -194,10 +194,10 @@
     .btn-danger:hover { background: rgba(255,34,68,.25); border-color: var(--red); color:#fff; box-shadow: 0 0 14px rgba(255,34,68,.35); }
 
     .btn-gerar {
-        background: var(--blue-dim); color: var(--blue);
-        border-color: rgba(59,130,246,.35); margin-bottom: 1rem;
+        background: var(--blue-dim) !important; color: var(--blue) !important;
+        border-color: rgba(59,130,246,.35) !important; margin-bottom: 1rem;
     }
-    .btn-gerar:hover { background: rgba(59,130,246,.25); border-color: var(--blue); color:#fff; box-shadow: 0 0 14px rgba(59,130,246,.35); }
+    .btn-gerar:hover { background: rgba(59,130,246,.25) !important; border-color: var(--blue) !important; color:#fff !important; box-shadow: 0 0 14px rgba(59,130,246,.35) !important; }
 
     .btn-win {
         width: auto !important; padding: .2rem .65rem !important;
@@ -532,10 +532,10 @@
         <div class="panel" style="margin-bottom:0;border-bottom:none;border-bottom-left-radius:0;border-bottom-right-radius:0;">
             <div style="display:flex;gap:1rem;align-items:center;">
                 <h2 style="margin:0;white-space:nowrap;">Selecione a Modalidade:</h2>
-                <select id="hub-selector" style="width:300px;margin:0;font-size:1rem;" onchange="loadGameHub()">
+                <select id="hub-selector" style="width:400px;margin:0;font-size:1rem;" onchange="loadGameHub()">
                     <option value="">-- Escolha --</option>
-                    <option value="Free Fire">Free Fire (Battle Royale)</option>
                     <option value="Fortnite">Fortnite (Battle Royale)</option>
+                    <option value="Free Fire">Free Fire (Grupos BR + Final CS)</option>
                     <option value="Brawl Stars">Brawl Stars (Grupos + Finais)</option>
                     <option value="Valorant">Valorant (Rei da Mesa)</option>
                 </select>
@@ -552,7 +552,6 @@
 
 <!-- ══════════════════════════════
      FIREBASE & LÓGICA CORE
-     (100% inalterado)
 ══════════════════════════════ -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
@@ -678,12 +677,14 @@
         if(unsubscribeHub) { unsubscribeHub(); unsubscribeHub = null; }
         const game = document.getElementById('hub-selector').value;
         const container = document.getElementById('game-container');
-        if(!game) return container.innerHTML = "<p style='text-align:center;'>Selecione uma modalidade.</p>";
+        if(!game) return container.innerHTML = "<p style='text-align:center;color:var(--muted);margin-top:3rem;font-family:var(--font-m);letter-spacing:2px;'>[ Selecione uma modalidade acima para inicializar o painel ]</p>";
 
         const teams = allTeams.filter(t => t.game === game);
 
-        if(game === "Free Fire" || game === "Fortnite") {
-            renderBattleRoyaleUI(game, teams, container);
+        if(game === "Fortnite") {
+            renderFortniteUI(game, teams, container);
+        } else if (game === "Free Fire") {
+            renderFreeFireUI(teams, container);
         } else if (game === "Brawl Stars") {
             renderBrawlStarsUI(teams, container);
         } else if (game === "Valorant") {
@@ -692,9 +693,9 @@
     };
 
     // ------------------------------------------
-    // 1. MODALIDADE BATTLE ROYALE
+    // 1. MODALIDADE FORTNITE (BATTLE ROYALE PURO)
     // ------------------------------------------
-    async function renderBattleRoyaleUI(game, teams, container) {
+    async function renderFortniteUI(game, teams, container) {
         let options = '<option value="">-- Nenhuma Selecionada --</option>';
         teams.forEach(t => options += `<option value="${t.id}">${t.name} (${t.class})</option>`);
 
@@ -740,6 +741,158 @@
         alert("Pódio salvo e sincronizado!");
     };
 
+
+    // ------------------------------------------
+    // 1.5 MODALIDADE FREE FIRE (MISTO: GRUPOS + CS FINAL)
+    // ------------------------------------------
+    function renderFreeFireUI(teams, container) {
+        container.innerHTML = `
+            ${timeConfigHTML}
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+                <div>
+                    <h3 style="margin-bottom: 5px; color: var(--cyan);">Gestão Free Fire (Formato Misto)</h3>
+                    <p style="color: var(--muted); font-size: 0.85rem; margin-top: 0; font-family: var(--font-m);">Fase de Grupos no Battle Royale. Grande Final no Contra Squad (4v4).</p>
+                </div>
+                <button onclick="gerarGruposFreeFire()" class="btn-gerar" style="width:auto; margin-bottom:0;">Sortear e Criar Grupos</button>
+            </div>
+            <div id="ff-board">Aguardando sorteio...</div>
+        `;
+
+        const q = query(collection(db, "ff_matches"));
+        unsubscribeHub = onSnapshot(q, snapshot => {
+            let gA = null, gB = null, finalMatch = null;
+            snapshot.forEach(d => {
+                const data = {docId: d.id, ...d.data()};
+                if(d.id === 'groupA') gA = data;
+                if(d.id === 'groupB') gB = data;
+                if(d.id === 'final') finalMatch = data;
+            });
+
+            if(!gA || !gB) return;
+
+            let optA = '<option value="">Selecione o Vencedor</option>';
+            gA.teams.forEach(t => optA += `<option value="${t.id}" ${gA.winner_id === t.id ? 'selected' : ''}>${t.name}</option>`);
+
+            let optB = '<option value="">Selecione o Vencedor</option>';
+            gB.teams.forEach(t => optB += `<option value="${t.id}" ${gB.winner_id === t.id ? 'selected' : ''}>${t.name}</option>`);
+
+            let htmlFinal = '';
+            if(finalMatch) {
+                const concluida = finalMatch.winner_id !== null;
+                const destrancada = finalMatch.t1_id && finalMatch.t2_id;
+                htmlFinal = `
+                    <div class="match-card match-slot final ${destrancada ? 'active' : ''}" style="margin: 2rem auto; max-width: 500px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom:5px;">
+                            <div class="badge bg-yellow" style="margin:0;">${finalMatch.label}</div>
+                            <span class="time-edit-btn" onclick="editMatchTime('final', 'ff_matches')" title="Editar este horário">${finalMatch.timeStr || 'Sem horário'} ✏️</span>
+                        </div>
+                        <div class="team-row ${finalMatch.winner_id === finalMatch.t1_id ? 'winner' : ''}">
+                            <span style="${!finalMatch.t1_id ? 'color:gray; font-style:italic' : ''}">${finalMatch.t1_name || 'Vencedor Grupo A'}</span>
+                            ${destrancada && !concluida ? `<button class="btn-win" onclick="processarVitoriaFFFinal('${finalMatch.t1_id}')">Venceu</button>` : ''}
+                        </div>
+                        <div class="team-row ${finalMatch.winner_id === finalMatch.t2_id ? 'winner' : ''}">
+                            <span style="${!finalMatch.t2_id ? 'color:gray; font-style:italic' : ''}">${finalMatch.t2_name || 'Vencedor Grupo B'}</span>
+                            ${destrancada && !concluida ? `<button class="btn-win" onclick="processarVitoriaFFFinal('${finalMatch.t2_id}')">Venceu</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('ff-board').innerHTML = `
+                <div class="groups-layout">
+                    <!-- Grupo A -->
+                    <div class="panel" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border);">
+                        <h4 style="color:var(--blue); margin-top:0; border-bottom:1px solid var(--border); padding-bottom:10px; font-family: var(--font-h);">Fase 1: GRUPO A (Battle Royale)</h4>
+                        <ul style="list-style:none; padding:0; margin-bottom:1.5rem;">
+                            ${gA.teams.map(t => `<li style="padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.05);"><strong>${t.name}</strong></li>`).join('')}
+                        </ul>
+                        <label style="font-size:0.85rem; color:var(--muted); display:block; margin-bottom: 5px;">Selecione a equipe Vencedora do Grupo A:</label>
+                        <div style="display:flex; gap:10px;">
+                            <select id="ff-sel-A" style="margin:0;">${optA}</select>
+                            <button class="btn-gerar" onclick="setWinnerFFGroup('groupA', document.getElementById('ff-sel-A').value, '${gA.winner_id}')" style="width:auto; margin-bottom:0;">Confirmar</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Grupo B -->
+                    <div class="panel" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border);">
+                        <h4 style="color:var(--blue); margin-top:0; border-bottom:1px solid var(--border); padding-bottom:10px; font-family: var(--font-h);">Fase 1: GRUPO B (Battle Royale)</h4>
+                        <ul style="list-style:none; padding:0; margin-bottom:1.5rem;">
+                            ${gB.teams.map(t => `<li style="padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.05);"><strong>${t.name}</strong></li>`).join('')}
+                        </ul>
+                        <label style="font-size:0.85rem; color:var(--muted); display:block; margin-bottom: 5px;">Selecione a equipe Vencedora do Grupo B:</label>
+                        <div style="display:flex; gap:10px;">
+                            <select id="ff-sel-B" style="margin:0;">${optB}</select>
+                            <button class="btn-gerar" onclick="setWinnerFFGroup('groupB', document.getElementById('ff-sel-B').value, '${gB.winner_id}')" style="width:auto; margin-bottom:0;">Confirmar</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 2rem; border-top: 2px dashed var(--border); padding-top: 2rem; text-align: center;">
+                    <h3 style="color: #fbbf24; margin:0; font-family: var(--font-h);">FASE 2 (Dia 18)</h3>
+                    <p style="color:gray; font-size:0.85rem; font-family: var(--font-m);">Confronto direto 4v4 (Contra Squad) para coroar o Campeão</p>
+                    ${htmlFinal}
+                </div>
+            `;
+        });
+    }
+
+    window.gerarGruposFreeFire = async () => {
+        const teams = allTeams.filter(t => t.game === "Free Fire");
+        if(teams.length !== 8) return alert("A modalidade Free Fire exige exatamente 8 equipes para estruturar os grupos!");
+        if(!confirm("Isto sorteará 4 equipes para o Grupo A e 4 equipes para o Grupo B. Confirmar?")) return;
+
+        const horaFinalStr = document.getElementById('cfg-final-hora').value;
+
+        teams.sort(() => Math.random() - 0.5);
+        const batch = writeBatch(db);
+        
+        let gA = teams.slice(0, 4);
+        let gB = teams.slice(4, 8);
+
+        batch.set(doc(db, "ff_matches", "groupA"), {
+            teams: gA.map(t => ({id: t.id, name: t.name})),
+            winner_id: null
+        });
+        batch.set(doc(db, "ff_matches", "groupB"), {
+            teams: gB.map(t => ({id: t.id, name: t.name})),
+            winner_id: null
+        });
+        
+        batch.set(doc(db, "ff_matches", "final"), {
+            label: '🏆 GRANDE FINAL (Contra Squad)',
+            timeStr: `Dia 18 - ${horaFinalStr}`,
+            t1_id: null, t1_name: null,
+            t2_id: null, t2_name: null,
+            winner_id: null
+        });
+
+        await batch.commit();
+    };
+
+    window.setWinnerFFGroup = async (groupId, winnerId, oldWinnerId) => {
+        if(!winnerId) return alert("Selecione uma equipe na lista para confirmar.");
+        if(winnerId === oldWinnerId) return; 
+
+        const batch = writeBatch(db);
+        batch.update(doc(db, "ff_matches", groupId), { winner_id: winnerId });
+
+        const teamName = allTeams.find(t => t.id === winnerId).name;
+
+        if(groupId === 'groupA') {
+            batch.update(doc(db, "ff_matches", "final"), { t1_id: winnerId, t1_name: teamName });
+        } else {
+            batch.update(doc(db, "ff_matches", "final"), { t2_id: winnerId, t2_name: teamName });
+        }
+
+        await batch.commit();
+    };
+
+    window.processarVitoriaFFFinal = async (winnerId) => {
+        if(!confirm("Tem certeza que deseja consagrar esta equipe como Grande Campeã do Free Fire?")) return;
+        await updateDoc(doc(db, "ff_matches", "final"), { winner_id: winnerId });
+    };
+
+
     // ------------------------------------------
     // 2. MODALIDADE BRAWL STARS
     // ------------------------------------------
@@ -748,7 +901,7 @@
             ${timeConfigHTML}
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
                 <h3>Gestão de Grupos</h3>
-                <button onclick="gerarGruposBrawl()" style="width:auto; background:var(--blue-dim); color:var(--blue); border-color:rgba(59,130,246,.35);">Sortear e Criar Grupos</button>
+                <button onclick="gerarGruposBrawl()" class="btn-gerar" style="width:auto; margin-bottom:0;">Sortear e Criar Grupos</button>
             </div>
             <div id="bs-board">Aguardando sorteio...</div>
         `;
@@ -816,7 +969,7 @@
                 <div style="margin-top: 3rem; padding-top: 2rem; border-top: 2px dashed var(--border);">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <h3 style="color: #fbbf24;">PLAYOFFS (Fase Final - Dia 18)</h3>
-                        <button onclick="gerarPlayoffsBrawl()" style="width:auto; background:#fbbf24; color:black;">Gerar Chaves Finais</button>
+                        <button onclick="gerarPlayoffsBrawl()" style="width:auto; background:#fbbf24; color:black; font-family: var(--font-b); font-weight: bold; border:none; padding: .5rem 1.2rem; border-radius: 2px; cursor: pointer;">Gerar Chaves Finais</button>
                     </div>
                     <div class="groups-layout">
                         <div><h4 style="color:#94a3b8">Semifinais</h4>${htmlPartidas.Semis}</div>
@@ -919,8 +1072,8 @@
         container.innerHTML = `
             ${timeConfigHTML}
             <div style="text-align:center; margin-bottom: 2rem;">
-                <h3 style="color: #ef4444; font-size:1.5rem;">Formato: King of the Hill (Escada)</h3>
-                <button onclick="sortearValorant()" style="width: auto; padding: 10px 20px; background: #ef4444; color:white;">Iniciar Chaveamento (Sorteio Aleatório)</button>
+                <h3 style="color: #ef4444; font-size:1.5rem; font-family: var(--font-h);">Formato: King of the Hill (Escada)</h3>
+                <button onclick="sortearValorant()" style="width: auto; padding: 10px 20px; background: #ef4444; color:white; border:none; font-family: var(--font-b); font-weight: bold; cursor: pointer; border-radius: 2px;">Iniciar Chaveamento (Sorteio Aleatório)</button>
             </div>
             <div id="val-board" class="valorant-ladder"></div>
         `;
