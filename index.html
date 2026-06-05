@@ -3,569 +3,1005 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CODECUP - Dashboard do Torneio</title>
-    <link rel="stylesheet" href="style.css">
+    <title>CODECUP — Tournament Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
-        /* UI E-sports Específica */
-        .game-hub { background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 0.5rem; margin-top: 1rem; border: 1px solid var(--border-color); }
-        .podium-box { background: linear-gradient(145deg, #1e293b, #0f172a); padding: 2rem; border-radius: 0.5rem; border: 1px solid #c1ff00; text-align: center;}
-        .podium-box select { background: #000; border: 1px solid #c1ff00; font-size: 1.1rem; color: #fff;}
-        
-        .groups-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem; }
-        .group-table { background: rgba(255,255,255,0.02); border-radius: 0.5rem; overflow: hidden; width: 100%; border-collapse: collapse;}
-        .group-table th { background: rgba(255,255,255,0.05); color: #fff; text-align: center; padding: 10px;}
-        .group-table td { text-align: center; padding: 10px; border-bottom: 1px solid var(--border-color);}
-        .group-table tr:nth-child(1), .group-table tr:nth-child(2) { background: rgba(16, 185, 129, 0.1); border-left: 3px solid var(--primary); }
-        
-        .valorant-ladder { display: flex; flex-direction: column; gap: 1rem; max-width: 600px; margin: 0 auto; }
-        .match-slot { border-left: 4px solid var(--border-color); padding-left: 1rem; position: relative; }
-        .match-slot.active { border-left-color: var(--accent); }
-        .match-slot.final { border-left-color: #fbbf24; }
-        
-        .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-size: 0.7rem; font-weight: bold; margin-bottom: 0.5rem; }
-        .bg-blue { background: #3b82f6; color: #fff; }
-        .bg-yellow { background: #fbbf24; color: #000; }
-        .bg-red { background: #ef4444; color: #fff; }
+    /* ============================================================
+       CODECUP  ·  GAMER / E-SPORTS  ·  FULL THEME
+       ============================================================ */
 
-        /* Painel de Horários */
-        .time-config-panel { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem; }
-        .time-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
-        .time-grid label { font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 3px; }
-        .time-grid input, .time-grid select { padding: 8px; font-size: 0.9rem; margin-bottom: 10px;}
-        .time-edit-btn { cursor: pointer; color: var(--accent); font-size: 0.85rem; transition: 0.2s; }
-        .time-edit-btn:hover { color: #fff; text-decoration: underline; }
+    :root {
+        --bg:        #05080f;
+        --bg2:       #080d18;
+        --panel:     #0c1526;
+        --panel2:    #0a1020;
+        --input-bg:  #070c18;
+        --cyan:      #00e5ff;
+        --cyan-dim:  rgba(0,229,255,.12);
+        --cyan-glow: 0 0 18px rgba(0,229,255,.35);
+        --purple:    #7c3aed;
+        --purple-dim:rgba(124,58,237,.12);
+        --red:       #ff2244;
+        --red-dim:   rgba(255,34,68,.12);
+        --gold:      #fbbf24;
+        --gold-dim:  rgba(251,191,36,.12);
+        --blue:      #3b82f6;
+        --blue-dim:  rgba(59,130,246,.12);
+        --text:      #b8cce0;
+        --muted:     #3d5575;
+        --border:    #162035;
+        --border-hi: rgba(0,229,255,.25);
+        --font-h:    'Orbitron', monospace;
+        --font-b:    'Rajdhani', sans-serif;
+        --font-m:    'Share Tech Mono', monospace;
+    }
+
+    /* ── RESET ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+        margin: 0; padding: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-b);
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    /* ── LAYERED BACKGROUND ─────────────────────────── */
+    body::before {   /* hex grid */
+        content: '';
+        position: fixed; inset: 0; z-index: 0;
+        background-image:
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 2L54 17v30L28 62 2 47V17Z' fill='none' stroke='%2300e5ff' stroke-width='.4' opacity='.08'/%3E%3Cpath d='M28 62L54 77v30L28 112 2 97V67Z' fill='none' stroke='%2300e5ff' stroke-width='.4' opacity='.08'/%3E%3C/svg%3E");
+        animation: bgDrift 30s linear infinite;
+    }
+    @keyframes bgDrift {
+        from { background-position: 0 0; }
+        to   { background-position: 56px 100px; }
+    }
+
+    body::after {    /* ambient glow spots */
+        content: '';
+        position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        background:
+            radial-gradient(ellipse 60% 40% at 10% 15%, rgba(0,229,255,.04) 0%, transparent 60%),
+            radial-gradient(ellipse 50% 50% at 90% 85%, rgba(124,58,237,.05) 0%, transparent 60%),
+            radial-gradient(ellipse 40% 30% at 50% 50%, rgba(5,8,15,.8) 0%, transparent 100%);
+    }
+
+    /* scanlines */
+    .scanlines {
+        pointer-events: none;
+        position: fixed; inset: 0; z-index: 9999;
+        background: repeating-linear-gradient(
+            180deg,
+            transparent 0, transparent 3px,
+            rgba(0,0,0,.06) 3px, rgba(0,0,0,.06) 4px
+        );
+    }
+
+    .hidden { display: none !important; }
+    #login-section, #admin-section { position: relative; z-index: 1; }
+
+
+    /* ── LOGIN ──────────────────────────────────────── */
+    #login-section {
+        display: flex; align-items: center; justify-content: center;
+        min-height: 100vh;
+    }
+
+    .login-box {
+        position: relative; overflow: hidden;
+        background: linear-gradient(145deg, rgba(12,21,38,.98), rgba(5,8,15,.98));
+        border: 1px solid var(--border-hi);
+        border-radius: 3px;
+        padding: 2.75rem 2.5rem;
+        width: 100%; max-width: 410px;
+        box-shadow: 0 0 0 1px rgba(0,229,255,.04), 0 0 60px rgba(0,229,255,.08), 0 30px 80px rgba(0,0,0,.8);
+    }
+
+    /* animated top sweep */
+    .login-box::before {
+        content: '';
+        position: absolute; top: 0; left: -100%; width: 200%; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--cyan), var(--purple), transparent);
+        animation: sweep 3s linear infinite;
+    }
+    @keyframes sweep { to { left: 100%; } }
+
+    /* corner accents */
+    .login-box::after        { content:''; position:absolute; bottom:0; right:0;  width:22px; height:22px; border-bottom:2px solid var(--cyan); border-right:2px solid var(--cyan); opacity:.5; }
+    .cc-tl                   { position:absolute; top:0; left:0; width:22px; height:22px; border-top:2px solid var(--cyan); border-left:2px solid var(--cyan); opacity:.5; }
+    .cc-tr                   { position:absolute; top:0; right:0; width:22px; height:22px; border-top:2px solid var(--cyan); border-right:2px solid var(--cyan); opacity:.5; }
+    .cc-bl                   { position:absolute; bottom:0; left:0; width:22px; height:22px; border-bottom:2px solid var(--cyan); border-left:2px solid var(--cyan); opacity:.5; }
+
+    .login-logo {
+        font-family: var(--font-h);
+        font-size: 2.2rem; font-weight: 900;
+        letter-spacing: 6px;
+        text-align: center;
+        color: var(--cyan);
+        text-shadow: 0 0 30px rgba(0,229,255,.6), 0 0 60px rgba(0,229,255,.3);
+        margin: 0 0 .3rem;
+        animation: glitch 5s infinite;
+    }
+    @keyframes glitch {
+        0%,88%,100% { text-shadow: 0 0 30px rgba(0,229,255,.6); transform: translate(0); }
+        90% { text-shadow: -3px 0 rgba(255,34,68,.9),  3px 0 rgba(0,229,255,.9); transform: translate(-1px); }
+        92% { text-shadow:  3px 0 rgba(255,34,68,.9), -3px 0 rgba(0,229,255,.9); transform: translate(1px); }
+        94% { text-shadow: 0 0 30px rgba(0,229,255,.6); transform: translate(0); }
+    }
+
+    .login-sub {
+        font-family: var(--font-m);
+        font-size: .7rem; letter-spacing: 4px; color: var(--muted);
+        text-align: center; text-transform: uppercase;
+        margin: 0 0 2rem;
+    }
+
+    /* ── INPUTS ──────────────────────────────────────── */
+    input, select, textarea {
+        width: 100%;
+        background: var(--input-bg);
+        border: 1px solid var(--border);
+        border-radius: 2px;
+        color: var(--text);
+        padding: .75rem 1rem;
+        margin-bottom: 1rem;
+        font-family: var(--font-b); font-size: 1rem;
+        outline: none; transition: all .25s;
+        box-sizing: border-box;
+    }
+    input:focus, select:focus, textarea:focus {
+        border-color: var(--cyan);
+        box-shadow: 0 0 0 1px rgba(0,229,255,.15), 0 0 14px rgba(0,229,255,.08);
+        background: rgba(0,229,255,.02);
+    }
+    input::placeholder, textarea::placeholder { color: var(--muted); }
+    select option { background: var(--panel); color: var(--text); }
+
+    /* ── BUTTONS ─────────────────────────────────────── */
+    button {
+        width: 100%; cursor: pointer;
+        font-family: var(--font-b); font-weight: 700;
+        font-size: .95rem; letter-spacing: 2px; text-transform: uppercase;
+        padding: .75rem 1.5rem;
+        background: var(--cyan-dim);
+        color: var(--cyan);
+        border: 1px solid rgba(0,229,255,.35);
+        border-radius: 2px;
+        transition: all .25s; position: relative; overflow: hidden;
+    }
+    button::after {
+        content: '';
+        position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(0,229,255,.1), transparent);
+        transition: left .35s;
+    }
+    button:hover::after { left: 100%; }
+    button:hover {
+        border-color: var(--cyan); color: #fff;
+        box-shadow: var(--cyan-glow);
+        background: rgba(0,229,255,.18);
+    }
+
+    .btn-danger {
+        background: var(--red-dim); color: var(--red);
+        border-color: rgba(255,34,68,.35); width: auto; padding: .5rem 1.2rem;
+    }
+    .btn-danger:hover { background: rgba(255,34,68,.25); border-color: var(--red); color:#fff; box-shadow: 0 0 14px rgba(255,34,68,.35); }
+
+    .btn-gerar {
+        background: var(--blue-dim); color: var(--blue);
+        border-color: rgba(59,130,246,.35); margin-bottom: 1rem;
+    }
+    .btn-gerar:hover { background: rgba(59,130,246,.25); border-color: var(--blue); color:#fff; box-shadow: 0 0 14px rgba(59,130,246,.35); }
+
+    .btn-win {
+        width: auto !important; padding: .2rem .65rem !important;
+        font-size: .72rem !important; letter-spacing: 1px !important;
+        background: var(--cyan-dim) !important; color: var(--cyan) !important;
+        border: 1px solid rgba(0,229,255,.3) !important; border-radius: 2px !important;
+    }
+    .btn-win:hover { background: var(--cyan) !important; color: #000 !important; box-shadow: var(--cyan-glow) !important; }
+
+    .btn-small-danger {
+        background: var(--red-dim) !important; color: var(--red) !important;
+        border: 1px solid rgba(255,34,68,.3) !important;
+        width: auto !important; padding: .2rem .6rem !important;
+        font-size: .72rem !important; letter-spacing: 0 !important; border-radius: 2px !important;
+    }
+    .btn-small-danger:hover { background: rgba(255,34,68,.25) !important; border-color: var(--red) !important; }
+
+
+    /* ── HEADER ──────────────────────────────────────── */
+    #admin-section { max-width: 1440px; margin: 0 auto; padding: 2rem; }
+
+    header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding-bottom: 1.5rem; margin-bottom: 2rem;
+        border-bottom: 1px solid var(--border);
+        position: relative;
+    }
+    header::after {
+        content: '';
+        position: absolute; bottom: -1px; left: 0;
+        width: 260px; height: 2px;
+        background: linear-gradient(90deg, var(--cyan), transparent);
+        box-shadow: 0 0 8px rgba(0,229,255,.5);
+    }
+    header h1 {
+        font-family: var(--font-h); font-size: 1.3rem;
+        font-weight: 900; letter-spacing: 3px; margin: 0;
+        color: var(--cyan);
+        text-shadow: 0 0 20px rgba(0,229,255,.4);
+    }
+    header h1 span { color: #fff; text-shadow: none; }
+
+    .status-dot {
+        display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+        background: var(--cyan); box-shadow: 0 0 8px var(--cyan);
+        margin-right: 8px; animation: blink 1.8s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.4;} }
+
+
+    /* ── TABS ────────────────────────────────────────── */
+    .tabs {
+        display: flex; gap: .5rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0; margin-bottom: 2rem;
+    }
+    .tab-btn {
+        background: transparent; color: var(--muted);
+        border: 1px solid transparent; border-bottom: none;
+        border-radius: 2px 2px 0 0;
+        width: auto; padding: .55rem 1.5rem;
+        font-family: var(--font-b); font-size: .9rem;
+        font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+        position: relative; bottom: -1px; transition: all .2s;
+    }
+    .tab-btn:hover { color: var(--cyan); background: rgba(0,229,255,.04); border-color: var(--border); box-shadow: none; }
+    .tab-btn.active {
+        background: var(--panel); color: var(--cyan);
+        border-color: var(--border); border-bottom-color: var(--panel);
+        text-shadow: 0 0 10px rgba(0,229,255,.4); box-shadow: none;
+    }
+    .tab-btn.active::after {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+        background: var(--cyan); box-shadow: 0 0 8px rgba(0,229,255,.6);
+    }
+
+
+    /* ── PANELS ──────────────────────────────────────── */
+    .panel {
+        background: linear-gradient(160deg, var(--panel), var(--panel2));
+        border: 1px solid var(--border); border-radius: 2px;
+        padding: 1.5rem; margin-bottom: 2rem;
+        position: relative; overflow: hidden;
+    }
+    .panel::before { /* top-right corner */
+        content:''; position:absolute; top:0; right:0;
+        width:18px; height:18px;
+        border-top:1px solid rgba(0,229,255,.3);
+        border-right:1px solid rgba(0,229,255,.3);
+    }
+    .panel::after { /* bottom-left corner */
+        content:''; position:absolute; bottom:0; left:0;
+        width:18px; height:18px;
+        border-bottom:1px solid rgba(0,229,255,.3);
+        border-left:1px solid rgba(0,229,255,.3);
+    }
+    .panel h2 {
+        font-family: var(--font-h); font-size: .9rem; font-weight: 700;
+        letter-spacing: 2px; text-transform: uppercase;
+        color: var(--cyan); margin: 0 0 1.25rem;
+        padding-bottom: .75rem; border-bottom: 1px solid var(--border);
+    }
+    .panel h3 { font-family: var(--font-h); font-size: .85rem; letter-spacing: 1.5px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+
+
+    /* ── TABLE ───────────────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; }
+    th {
+        padding: .6rem 1rem; text-align: left;
+        border-bottom: 1px solid var(--border);
+        font-family: var(--font-m); font-size: .65rem;
+        letter-spacing: 2px; text-transform: uppercase; font-weight: normal;
+        color: var(--cyan); background: rgba(0,229,255,.03);
+    }
+    td {
+        padding: .65rem 1rem; border-bottom: 1px solid rgba(22,32,53,.6);
+        font-family: var(--font-b); transition: background .2s;
+    }
+    tr:hover td { background: rgba(0,229,255,.025); }
+    td strong { color: var(--text); }
+    td small { color: var(--muted); font-size: .78rem; }
+
+
+    /* ── MATCH CARDS ─────────────────────────────────── */
+    .match-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(340px,1fr)); gap: 1.5rem; }
+
+    .match-card {
+        background: linear-gradient(145deg, var(--panel), var(--panel2));
+        border: 1px solid var(--border); border-radius: 2px;
+        padding: 1.2rem; position: relative; overflow: hidden;
+        transition: all .3s;
+    }
+    .match-card::before { /* top shimmer */
+        content:''; position:absolute; top:0; left:0; right:0; height:1px;
+        background: linear-gradient(90deg, transparent, rgba(59,130,246,.5), transparent);
+    }
+    .match-card::after { /* top-right corner */
+        content:''; position:absolute; top:0; right:0;
+        width:12px; height:12px;
+        border-top:1px solid rgba(59,130,246,.5);
+        border-right:1px solid rgba(59,130,246,.5);
+    }
+    .match-card:hover { border-color: rgba(59,130,246,.3); box-shadow: 0 0 20px rgba(59,130,246,.08); }
+
+    .match-header {
+        display:flex; justify-content:space-between;
+        font-family: var(--font-m); font-size: .75rem; letter-spacing: 1px;
+        color: var(--muted); border-bottom: 1px solid var(--border);
+        padding-bottom: .5rem; margin-bottom: .75rem;
+    }
+    .match-time { color: var(--blue); font-weight: bold; }
+
+    .team-row {
+        display:flex; justify-content:space-between; align-items:center;
+        padding: .45rem .7rem; border-radius: 2px; margin-bottom: .4rem;
+        background: rgba(255,255,255,.015); border: 1px solid transparent;
+        font-size: .95rem; letter-spacing: .5px; transition: all .25s;
+    }
+    .team-row:hover { background: rgba(0,229,255,.04); }
+    .team-row.winner {
+        background: rgba(0,229,255,.07); border-left: 2px solid var(--cyan);
+        border-color: rgba(0,229,255,.2);
+        animation: winPulse 2.2s ease-in-out infinite;
+    }
+    @keyframes winPulse {
+        0%,100% { box-shadow: inset 0 0 12px rgba(0,229,255,.04); }
+        50%      { box-shadow: inset 0 0 24px rgba(0,229,255,.10); }
+    }
+
+
+    /* ── PODIUM ──────────────────────────────────────── */
+    .podium-box {
+        background: linear-gradient(145deg, rgba(12,21,38,.98), rgba(5,8,15,.98));
+        border: 1px solid rgba(251,191,36,.4); border-radius: 2px; padding: 2rem;
+        text-align: center; position: relative;
+        box-shadow: 0 0 30px rgba(251,191,36,.06);
+    }
+    .podium-box::before {
+        content:''; position:absolute; top:0; left:0; right:0; height:2px;
+        background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+    .podium-box::after { display:none; }
+    .podium-box select { background: rgba(0,0,0,.5); border: 1px solid rgba(251,191,36,.4); color:#fff; }
+    .podium-box select:focus { border-color: var(--gold); box-shadow: 0 0 10px rgba(251,191,36,.2); }
+
+
+    /* ── GROUPS ──────────────────────────────────────── */
+    .groups-layout { display:grid; grid-template-columns:1fr 1fr; gap:2rem; margin-top:1rem; }
+    .group-table { background:rgba(255,255,255,.015); border-radius:2px; overflow:hidden; width:100%; border-collapse:collapse; }
+    .group-table th { background:rgba(0,229,255,.05); color:var(--cyan); text-align:center; padding:10px; font-family:var(--font-h); font-size:.65rem; letter-spacing:1px; }
+    .group-table td { text-align:center; padding:10px; border-bottom:1px solid var(--border); }
+    .group-table tr:nth-child(1) td, .group-table tr:nth-child(2) td { background:rgba(0,229,255,.04); border-left:2px solid var(--cyan); }
+
+
+    /* ── VALORANT LADDER ─────────────────────────────── */
+    .valorant-ladder { display:flex; flex-direction:column; gap:1rem; max-width:600px; margin:0 auto; }
+    .match-slot { border-left:3px solid var(--border); padding-left:1rem; position:relative; transition:all .3s; }
+    .match-slot.active { border-left-color: var(--blue); box-shadow: -4px 0 14px rgba(59,130,246,.15); }
+    .match-slot.final  { border-left-color: var(--gold); box-shadow: -4px 0 14px rgba(251,191,36,.15); }
+
+
+    /* ── BADGES ──────────────────────────────────────── */
+    .badge {
+        display:inline-block; padding:.2rem .6rem; border-radius:2px;
+        font-size:.62rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase;
+        font-family: var(--font-m); margin-bottom:.5rem;
+    }
+    .bg-blue   { background:var(--blue-dim); color:var(--blue); border:1px solid rgba(59,130,246,.35); }
+    .bg-yellow { background:var(--gold-dim); color:var(--gold); border:1px solid rgba(251,191,36,.35); }
+    .bg-red    { background:var(--red-dim);  color:var(--red);  border:1px solid rgba(255,34,68,.35); }
+
+
+    /* ── TIME CONFIG ─────────────────────────────────── */
+    .time-config-panel {
+        background: rgba(0,0,0,.22); border:1px solid var(--border);
+        padding:1.5rem; border-radius:2px; margin-bottom:1.5rem; position:relative;
+    }
+    .time-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; }
+    .time-grid label { font-size:.7rem; color:var(--muted); display:block; margin-bottom:3px; text-transform:uppercase; letter-spacing:1px; font-family:var(--font-m); }
+    .time-grid input, .time-grid select { padding:8px; font-size:.85rem; margin-bottom:0; }
+    .time-edit-btn { cursor:pointer; color:var(--blue); font-size:.78rem; font-family:var(--font-m); letter-spacing:1px; transition:all .2s; }
+    .time-edit-btn:hover { color:#fff; text-shadow:0 0 8px rgba(59,130,246,.6); }
+
+
+    /* ── HUB SELECTOR ────────────────────────────────── */
+    #hub-selector {
+        background: var(--blue-dim) !important;
+        color: var(--blue) !important;
+        border-color: rgba(59,130,246,.35) !important;
+        font-family: var(--font-b) !important;
+        font-weight: 600 !important; letter-spacing: 1px !important;
+    }
+
+
+    /* ── SCROLLBAR ───────────────────────────────────── */
+    ::-webkit-scrollbar { width:4px; height:4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius:2px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(0,229,255,.4); }
+
+
+    /* ── GAME HUB ────────────────────────────────────── */
+    .game-hub {
+        background: rgba(0,0,0,.2); padding:1.5rem; border-radius:2px;
+        margin-top:1rem; border:1px solid var(--border);
+    }
+
+
+    /* ── RESPONSIVE ──────────────────────────────────── */
+    @media (max-width:768px) {
+        .grid-2, .groups-layout { grid-template-columns:1fr; }
+        #admin-section { padding:1rem; }
+        header h1 { font-size:1rem; letter-spacing:2px; }
+        .tabs { flex-wrap:wrap; }
+    }
+
+    /* ── ENTRY ANIMATIONS ────────────────────────────── */
+    @keyframes fadeSlideUp {
+        from { opacity:0; transform:translateY(16px); }
+        to   { opacity:1; transform:translateY(0); }
+    }
+    .login-box { animation: fadeSlideUp .6s ease both; }
+    #admin-section header { animation: fadeSlideUp .4s ease both; }
+    .panel { animation: fadeSlideUp .5s ease both; }
     </style>
 </head>
 <body>
 
-    <!-- LOGIN -->
-    <div id="login-section">
-        <div class="login-box">
-            <h1>CODECUP Admin</h1>
-            <input type="email" id="email" placeholder="E-mail">
-            <input type="password" id="password" placeholder="Senha">
-            <button id="btn-login">Acessar Hub</button>
-            <p id="login-error" style="color: var(--danger); text-align: center; margin-top: 1rem;"></p>
+<!-- Scanline overlay -->
+<div class="scanlines"></div>
+
+<!-- ══════════════════════════════
+     LOGIN
+══════════════════════════════ -->
+<div id="login-section">
+    <div class="login-box">
+        <div class="cc-tl"></div>
+        <div class="cc-tr"></div>
+        <div class="cc-bl"></div>
+        <h1 class="login-logo">CODECUP</h1>
+        <p class="login-sub">Admin Terminal · Tournament Hub</p>
+        <input type="email"    id="email"    placeholder="E-mail">
+        <input type="password" id="password" placeholder="Senha">
+        <button id="btn-login">▶ Acessar Hub</button>
+        <p id="login-error" style="color:var(--red);text-align:center;margin-top:1rem;font-size:.82rem;font-family:var(--font-m);"></p>
+    </div>
+</div>
+
+<!-- ══════════════════════════════
+     PAINEL ADMIN
+══════════════════════════════ -->
+<div id="admin-section" class="hidden">
+    <header>
+        <h1><span class="status-dot"></span>HUB DE TORNEIO <span>CODECUP</span></h1>
+        <button id="btn-logout" class="btn-danger">◼ Sair</button>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('tab-cadastro')">01 · Equipes</button>
+        <button class="tab-btn"        onclick="showTab('tab-torneio')">02 · Chaves & Duelos</button>
+    </div>
+
+    <!-- ABA 1: CRUD -->
+    <div id="tab-cadastro" class="tab-content">
+        <div class="grid-2">
+            <div class="panel">
+                <h2>Registrar Nova Equipe</h2>
+                <input type="text"     id="t-name"    placeholder="Nome da Equipe">
+                <input type="text"     id="t-class"   placeholder="Sala / Turma">
+                <select id="t-game">
+                    <option value="Brawl Stars">Brawl Stars</option>
+                    <option value="Fortnite">Fortnite</option>
+                    <option value="Free Fire">Free Fire</option>
+                    <option value="Valorant">Valorant</option>
+                </select>
+                <textarea id="t-members" placeholder="Membros (vírgula)" rows="2"></textarea>
+                <button id="btn-save-team">+ Salvar Equipe</button>
+            </div>
+            <div class="panel">
+                <h2>Equipes Cadastradas</h2>
+                <div style="overflow-y:auto;max-height:350px;">
+                    <table><tbody id="lista-equipes-crud"></tbody></table>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- PAINEL -->
-    <div id="admin-section" class="hidden">
-        <header>
-            <h1>HUB DE TORNEIO <span>CODECUP</span></h1>
-            <button id="btn-logout" class="btn-danger">Sair</button>
-        </header>
-
-        <div class="tabs">
-            <button class="tab-btn active" onclick="showTab('tab-cadastro')">1. Equipes</button>
-            <button class="tab-btn" onclick="showTab('tab-torneio')">2. Gestão de Chaves e Duelos</button>
-        </div>
-
-        <!-- ABA 1: CRUD -->
-        <div id="tab-cadastro" class="tab-content">
-            <div class="grid-2">
-                <div class="panel">
-                    <h2>Registrar Nova Equipe</h2>
-                    <input type="text" id="t-name" placeholder="Nome da Equipe">
-                    <input type="text" id="t-class" placeholder="Sala / Turma">
-                    <select id="t-game">
-                        <option value="Brawl Stars">Brawl Stars</option>
-                        <option value="Fortnite">Fortnite</option>
-                        <option value="Free Fire">Free Fire</option>
-                        <option value="Valorant">Valorant</option>
-                    </select>
-                    <textarea id="t-members" placeholder="Membros (vírgula)" rows="2"></textarea>
-                    <button id="btn-save-team">Salvar Equipe</button>
-                </div>
-                <div class="panel">
-                    <h2>Equipes Cadastradas</h2>
-                    <div style="overflow-y: auto; max-height: 350px;">
-                        <table><tbody id="lista-equipes-crud"></tbody></table>
-                    </div>
-                </div>
+    <!-- ABA 2: HUB DE TORNEIO -->
+    <div id="tab-torneio" class="tab-content hidden">
+        <div class="panel" style="margin-bottom:0;border-bottom:none;border-bottom-left-radius:0;border-bottom-right-radius:0;">
+            <div style="display:flex;gap:1rem;align-items:center;">
+                <h2 style="margin:0;white-space:nowrap;">Selecione a Modalidade:</h2>
+                <select id="hub-selector" style="width:300px;margin:0;font-size:1rem;" onchange="loadGameHub()">
+                    <option value="">-- Escolha --</option>
+                    <option value="Free Fire">Free Fire (Battle Royale)</option>
+                    <option value="Fortnite">Fortnite (Battle Royale)</option>
+                    <option value="Brawl Stars">Brawl Stars (Grupos + Finais)</option>
+                    <option value="Valorant">Valorant (Rei da Mesa)</option>
+                </select>
             </div>
         </div>
 
-        <!-- ABA 2: HUB DE TORNEIO -->
-        <div id="tab-torneio" class="tab-content hidden">
-            <div class="panel" style="margin-bottom: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
-                <div style="display: flex; gap: 1rem; align-items: center;">
-                    <h2 style="margin: 0;">Selecione a Modalidade:</h2>
-                    <select id="hub-selector" style="width: 300px; margin: 0; font-size: 1.1rem; background: var(--accent); color: white; border: none;" onchange="loadGameHub()">
-                        <option value="">-- Escolha --</option>
-                        <option value="Free Fire">Free Fire (Battle Royale)</option>
-                        <option value="Fortnite">Fortnite (Battle Royale)</option>
-                        <option value="Brawl Stars">Brawl Stars (Grupos + Finais)</option>
-                        <option value="Valorant">Valorant (Rei da Mesa)</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- CONTAINER DINÂMICO PARA CADA JOGO -->
-            <div id="game-container" class="panel" style="border-top-left-radius: 0; border-top-right-radius: 0; min-height: 400px;">
-                <p style="text-align: center; color: var(--text-muted); margin-top: 3rem;">Selecione uma modalidade acima para abrir o painel de controle.</p>
-            </div>
+        <div id="game-container" class="panel" style="border-top-left-radius:0;border-top-right-radius:0;min-height:400px;">
+            <p style="text-align:center;color:var(--muted);margin-top:3rem;font-family:var(--font-m);letter-spacing:2px;">
+                [ Selecione uma modalidade acima para inicializar o painel ]
+            </p>
         </div>
-
     </div>
+</div>
 
-    <!-- FIREBASE & LÓGICA CORE -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, where, doc, updateDoc, deleteDoc, getDocs, writeBatch, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+<!-- ══════════════════════════════
+     FIREBASE & LÓGICA CORE
+     (100% inalterado)
+══════════════════════════════ -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, where, doc, updateDoc, deleteDoc, getDocs, writeBatch, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyD7flH7shnJj1v7hfOcSxLgbP2jgn8gaW8",
-            authDomain: "codecup-7a34a.firebaseapp.com",
-            projectId: "codecup-7a34a",
-            storageBucket: "codecup-7a34a.firebasestorage.app",
-            messagingSenderId: "231556704857",
-            appId: "1:231556704857:web:eea9103792369163161f48"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyD7flH7shnJj1v7hfOcSxLgbP2jgn8gaW8",
+        authDomain: "codecup-7a34a.firebaseapp.com",
+        projectId: "codecup-7a34a",
+        storageBucket: "codecup-7a34a.firebasestorage.app",
+        messagingSenderId: "231556704857",
+        appId: "1:231556704857:web:eea9103792369163161f48"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-        let allTeams = [];
-        let unsubscribeHub = null;
+    let allTeams = [];
+    let unsubscribeHub = null;
 
-        // --- SISTEMA BASE ---
-        window.showTab = function(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(tabId).classList.remove('hidden');
-            event.currentTarget.classList.add('active');
-        };
+    // --- SISTEMA BASE ---
+    window.showTab = function(tabId) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(tabId).classList.remove('hidden');
+        event.currentTarget.classList.add('active');
+    };
 
-        document.getElementById('btn-login').addEventListener('click', async () => {
-            try { await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); } 
-            catch (e) { document.getElementById('login-error').innerText = "Erro: " + e.message; }
-        });
+    document.getElementById('btn-login').addEventListener('click', async () => {
+        try { await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); }
+        catch (e) { document.getElementById('login-error').innerText = "Erro: " + e.message; }
+    });
 
-        onAuthStateChanged(auth, user => {
-            if (user) {
-                document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('admin-section').classList.remove('hidden');
-                loadTeamsGlobally();
-            } else {
-                document.getElementById('login-section').classList.remove('hidden');
-                document.getElementById('admin-section').classList.add('hidden');
-            }
-        });
-        document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
-
-        document.getElementById('btn-save-team').addEventListener('click', async () => {
-            const name = document.getElementById('t-name').value;
-            const className = document.getElementById('t-class').value;
-            const game = document.getElementById('t-game').value;
-            if(!name || !className) return alert("Preencha Nome e Turma!");
-            await addDoc(collection(db, "teams"), { name, class: className, game, members: document.getElementById('t-members').value, wins: 0 });
-            document.getElementById('t-name').value = ''; document.getElementById('t-members').value = '';
-        });
-
-        function loadTeamsGlobally() {
-            onSnapshot(collection(db, "teams"), snapshot => {
-                allTeams = [];
-                const lista = document.getElementById('lista-equipes-crud');
-                lista.innerHTML = "";
-                snapshot.forEach(docSnap => {
-                    const t = { id: docSnap.id, ...docSnap.data() };
-                    allTeams.push(t);
-                    lista.innerHTML += `<tr><td><strong>${t.name}</strong><br><small>${t.class}</small></td><td>${t.game}</td><td><button class="btn-small-danger" onclick="window.excluirEquipe('${t.id}')">X</button></td></tr>`;
-                });
-                if(document.getElementById('hub-selector').value) window.loadGameHub();
-            });
+    onAuthStateChanged(auth, user => {
+        if (user) {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('admin-section').classList.remove('hidden');
+            loadTeamsGlobally();
+        } else {
+            document.getElementById('login-section').classList.remove('hidden');
+            document.getElementById('admin-section').classList.add('hidden');
         }
-        window.excluirEquipe = async id => { if(confirm("Excluir?")) await deleteDoc(doc(db, "teams", id)); };
+    });
+    document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
+
+    document.getElementById('btn-save-team').addEventListener('click', async () => {
+        const name = document.getElementById('t-name').value;
+        const className = document.getElementById('t-class').value;
+        const game = document.getElementById('t-game').value;
+        if(!name || !className) return alert("Preencha Nome e Turma!");
+        await addDoc(collection(db, "teams"), { name, class: className, game, members: document.getElementById('t-members').value, wins: 0 });
+        document.getElementById('t-name').value = ''; document.getElementById('t-members').value = '';
+    });
+
+    function loadTeamsGlobally() {
+        onSnapshot(collection(db, "teams"), snapshot => {
+            allTeams = [];
+            const lista = document.getElementById('lista-equipes-crud');
+            lista.innerHTML = "";
+            snapshot.forEach(docSnap => {
+                const t = { id: docSnap.id, ...docSnap.data() };
+                allTeams.push(t);
+                lista.innerHTML += `<tr><td><strong>${t.name}</strong><br><small>${t.class}</small></td><td>${t.game}</td><td><button class="btn-small-danger" onclick="window.excluirEquipe('${t.id}')">X</button></td></tr>`;
+            });
+            if(document.getElementById('hub-selector').value) window.loadGameHub();
+        });
+    }
+    window.excluirEquipe = async id => { if(confirm("Excluir?")) await deleteDoc(doc(db, "teams", id)); };
 
 
-        // ==========================================
-        // MOTOR DE TEMPO (HELPER FUNCS)
-        // ==========================================
-        const strToMins = (str) => { const [h,m] = str.split(':'); return parseInt(h)*60 + parseInt(m); };
-        const minsToStr = (mins) => { 
-            const h = Math.floor(mins/60).toString().padStart(2, '0');
-            const m = (mins%60).toString().padStart(2, '0');
-            return `${h}:${m}`;
-        };
+    // ==========================================
+    // MOTOR DE TEMPO (HELPER FUNCS)
+    // ==========================================
+    const strToMins = (str) => { const [h,m] = str.split(':'); return parseInt(h)*60 + parseInt(m); };
+    const minsToStr = (mins) => {
+        const h = Math.floor(mins/60).toString().padStart(2, '0');
+        const m = (mins%60).toString().padStart(2, '0');
+        return `${h}:${m}`;
+    };
 
-        window.editMatchTime = async function(docId, collectionName) {
-            const novoHorario = prompt("Digite o novo horário para esta partida (Ex: Dia 17 - 10:30):");
-            if(novoHorario) {
-                await updateDoc(doc(db, collectionName, docId), { timeStr: novoHorario });
-            }
-        };
+    window.editMatchTime = async function(docId, collectionName) {
+        const novoHorario = prompt("Digite o novo horário para esta partida (Ex: Dia 17 - 10:30):");
+        if(novoHorario) {
+            await updateDoc(doc(db, collectionName, docId), { timeStr: novoHorario });
+        }
+    };
 
-        // UI Base de Configuração de Tempo a ser injetada
-        const timeConfigHTML = `
-            <div class="time-config-panel">
-                <h4 style="margin-top: 0; color: var(--accent);">⚙️ Configuração de Agendamento</h4>
-                <div class="time-grid">
-                    <div><label>Dia Inicial</label><select id="cfg-dia"><option value="Dia 17">Dia 17</option><option value="Dia 18">Dia 18</option></select></div>
-                    <div><label>Início da 1ª Partida</label><input type="time" id="cfg-inicio" value="08:00"></div>
-                    <div><label>Duração/Partida (min)</label><input type="number" id="cfg-duracao" value="30"></div>
-                    <div>
-                        <label>Terá Intervalo?</label>
-                        <select id="cfg-usa-int">
-                            <option value="sim">Sim</option>
-                            <option value="nao">Não</option>
-                        </select>
-                    </div>
-                    <div><label>Início do Intervalo</label><input type="time" id="cfg-int-inicio" value="12:00"></div>
-                    <div><label>Fim do Intervalo</label><input type="time" id="cfg-int-fim" value="13:00"></div>
+    // UI Base de Configuração de Tempo a ser injetada
+    const timeConfigHTML = `
+        <div class="time-config-panel">
+            <h4 style="margin-top: 0; color: var(--blue);">⚙️ Configuração de Agendamento</h4>
+            <div class="time-grid">
+                <div><label>Dia Inicial</label><select id="cfg-dia"><option value="Dia 17">Dia 17</option><option value="Dia 18">Dia 18</option></select></div>
+                <div><label>Início da 1ª Partida</label><input type="time" id="cfg-inicio" value="08:00"></div>
+                <div><label>Duração/Partida (min)</label><input type="number" id="cfg-duracao" value="30"></div>
+                <div>
+                    <label>Terá Intervalo?</label>
+                    <select id="cfg-usa-int">
+                        <option value="sim">Sim</option>
+                        <option value="nao">Não</option>
+                    </select>
                 </div>
-                <div style="border-top: 1px dashed var(--border-color); padding-top: 15px; margin-top: 5px; display: flex; align-items: center; gap: 15px;">
-                    <div>
-                        <label style="color: #fbbf24; font-weight: bold; font-size: 0.85rem;">Horário da Fase Final (Restrito p/ Dia 18)</label>
-                        <input type="time" id="cfg-final-hora" value="10:00" style="background: #27272a; border-color: #fbbf24; margin-bottom:0;">
+                <div><label>Início do Intervalo</label><input type="time" id="cfg-int-inicio" value="12:00"></div>
+                <div><label>Fim do Intervalo</label><input type="time" id="cfg-int-fim" value="13:00"></div>
+            </div>
+            <div style="border-top: 1px dashed var(--border); padding-top: 15px; margin-top: 5px; display: flex; align-items: center; gap: 15px;">
+                <div>
+                    <label style="color: #fbbf24; font-weight: bold; font-size: 0.85rem;">Horário da Fase Final (Restrito p/ Dia 18)</label>
+                    <input type="time" id="cfg-final-hora" value="10:00" style="background: #27272a; border-color: #fbbf24; margin-bottom:0;">
+                </div>
+                <p style="font-size: 0.8rem; color: gray; margin: 0; max-width: 400px;">A Grande Final (e Semifinais do Brawl Stars) serão fixadas automaticamente para o Dia 18 a partir deste horário.</p>
+            </div>
+        </div>
+    `;
+
+
+    // ==========================================
+    // GERENCIADOR DE HUB
+    // ==========================================
+    window.loadGameHub = function() {
+        if(unsubscribeHub) { unsubscribeHub(); unsubscribeHub = null; }
+        const game = document.getElementById('hub-selector').value;
+        const container = document.getElementById('game-container');
+        if(!game) return container.innerHTML = "<p style='text-align:center;'>Selecione uma modalidade.</p>";
+
+        const teams = allTeams.filter(t => t.game === game);
+
+        if(game === "Free Fire" || game === "Fortnite") {
+            renderBattleRoyaleUI(game, teams, container);
+        } else if (game === "Brawl Stars") {
+            renderBrawlStarsUI(teams, container);
+        } else if (game === "Valorant") {
+            renderValorantUI(teams, container);
+        }
+    };
+
+    // ------------------------------------------
+    // 1. MODALIDADE BATTLE ROYALE
+    // ------------------------------------------
+    async function renderBattleRoyaleUI(game, teams, container) {
+        let options = '<option value="">-- Nenhuma Selecionada --</option>';
+        teams.forEach(t => options += `<option value="${t.id}">${t.name} (${t.class})</option>`);
+
+        container.innerHTML = `
+            <div class="grid-2">
+                <div>
+                    <h3 style="color: var(--cyan);">Lobby - Inscritos (${teams.length})</h3>
+                    <table class="group-table" style="width:100%; text-align:left;">
+                        ${teams.map(t => `<tr><td style="padding: 10px; text-align:left;"><strong>${t.name}</strong> <small style="color:gray">${t.class}</small></td></tr>`).join('')}
+                    </table>
+                </div>
+                <div class="podium-box">
+                    <h3 style="color: #fbbf24; font-size: 1.8rem; margin-top:0;">COROAÇÃO</h3>
+                    <p style="color:gray; font-size: 0.9rem; margin-bottom: 2rem;">Selecione manualmente as posições finais após o término das quedas.</p>
+                    
+                    <div style="margin-bottom: 1rem; text-align:left;">
+                        <label style="color:#fbbf24; font-weight:bold;">🥇 1º Lugar (Campeão)</label>
+                        <select id="br-pos1">${options}</select>
                     </div>
-                    <p style="font-size: 0.8rem; color: gray; margin: 0; max-width: 400px;">A Grande Final (e Semifinais do Brawl Stars) serão fixadas automaticamente para o Dia 18 a partir deste horário.</p>
+                    <div style="margin-bottom: 1rem; text-align:left;">
+                        <label style="color:#94a3b8; font-weight:bold;">🥈 2º Lugar</label>
+                        <select id="br-pos2">${options}</select>
+                    </div>
+                    <div style="margin-bottom: 1rem; text-align:left;">
+                        <label style="color:#b45309; font-weight:bold;">🥉 3º Lugar</label>
+                        <select id="br-pos3">${options}</select>
+                    </div>
+                    <button onclick="salvarPodioBR('${game}')" style="background: var(--cyan); margin-top: 1rem; color: #000;">Confirmar Resultado Oficial</button>
                 </div>
             </div>
         `;
 
-
-        // ==========================================
-        // GERENCIADOR DE HUB
-        // ==========================================
-        window.loadGameHub = function() {
-            if(unsubscribeHub) { unsubscribeHub(); unsubscribeHub = null; }
-            const game = document.getElementById('hub-selector').value;
-            const container = document.getElementById('game-container');
-            if(!game) return container.innerHTML = "<p style='text-align:center;'>Selecione uma modalidade.</p>";
-
-            const teams = allTeams.filter(t => t.game === game);
-
-            if(game === "Free Fire" || game === "Fortnite") {
-                renderBattleRoyaleUI(game, teams, container);
-            } else if (game === "Brawl Stars") {
-                renderBrawlStarsUI(teams, container);
-            } else if (game === "Valorant") {
-                renderValorantUI(teams, container);
-            }
-        };
-
-        // ------------------------------------------
-        // 1. MODALIDADE BATTLE ROYALE
-        // ------------------------------------------
-        async function renderBattleRoyaleUI(game, teams, container) {
-            let options = '<option value="">-- Nenhuma Selecionada --</option>';
-            teams.forEach(t => options += `<option value="${t.id}">${t.name} (${t.class})</option>`);
-
-            container.innerHTML = `
-                <div class="grid-2">
-                    <div>
-                        <h3 style="color: var(--primary);">Lobby - Inscritos (${teams.length})</h3>
-                        <table class="group-table" style="width:100%; text-align:left;">
-                            ${teams.map(t => `<tr><td style="padding: 10px; text-align:left;"><strong>${t.name}</strong> <small style="color:gray">${t.class}</small></td></tr>`).join('')}
-                        </table>
-                    </div>
-                    <div class="podium-box">
-                        <h3 style="color: #fbbf24; font-size: 1.8rem; margin-top:0;">COROAÇÃO</h3>
-                        <p style="color:gray; font-size: 0.9rem; margin-bottom: 2rem;">Selecione manualmente as posições finais após o término das quedas.</p>
-                        
-                        <div style="margin-bottom: 1rem; text-align:left;">
-                            <label style="color:#fbbf24; font-weight:bold;">🥇 1º Lugar (Campeão)</label>
-                            <select id="br-pos1">${options}</select>
-                        </div>
-                        <div style="margin-bottom: 1rem; text-align:left;">
-                            <label style="color:#94a3b8; font-weight:bold;">🥈 2º Lugar</label>
-                            <select id="br-pos2">${options}</select>
-                        </div>
-                        <div style="margin-bottom: 1rem; text-align:left;">
-                            <label style="color:#b45309; font-weight:bold;">🥉 3º Lugar</label>
-                            <select id="br-pos3">${options}</select>
-                        </div>
-                        <button onclick="salvarPodioBR('${game}')" style="background: var(--primary); margin-top: 1rem;">Confirmar Resultado Oficial</button>
-                    </div>
-                </div>
-            `;
-
-            const docRef = await getDoc(doc(db, "podiums", game));
-            if(docRef.exists()) {
-                const data = docRef.data();
-                document.getElementById('br-pos1').value = data.pos1 || '';
-                document.getElementById('br-pos2').value = data.pos2 || '';
-                document.getElementById('br-pos3').value = data.pos3 || '';
-            }
+        const docRef = await getDoc(doc(db, "podiums", game));
+        if(docRef.exists()) {
+            const data = docRef.data();
+            document.getElementById('br-pos1').value = data.pos1 || '';
+            document.getElementById('br-pos2').value = data.pos2 || '';
+            document.getElementById('br-pos3').value = data.pos3 || '';
         }
-        window.salvarPodioBR = async (game) => {
-            await setDoc(doc(db, "podiums", game), { pos1: document.getElementById('br-pos1').value, pos2: document.getElementById('br-pos2').value, pos3: document.getElementById('br-pos3').value });
-            alert("Pódio salvo e sincronizado!");
-        };
+    }
+    window.salvarPodioBR = async (game) => {
+        await setDoc(doc(db, "podiums", game), { pos1: document.getElementById('br-pos1').value, pos2: document.getElementById('br-pos2').value, pos3: document.getElementById('br-pos3').value });
+        alert("Pódio salvo e sincronizado!");
+    };
 
-        // ------------------------------------------
-        // 2. MODALIDADE BRAWL STARS
-        // ------------------------------------------
-        function renderBrawlStarsUI(teams, container) {
-            container.innerHTML = `
-                ${timeConfigHTML}
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
-                    <h3>Gestão de Grupos</h3>
-                    <button onclick="gerarGruposBrawl()" style="width:auto; background:var(--accent);">Sortear e Criar Grupos</button>
-                </div>
-                <div id="bs-board">Aguardando sorteio...</div>
-            `;
+    // ------------------------------------------
+    // 2. MODALIDADE BRAWL STARS
+    // ------------------------------------------
+    function renderBrawlStarsUI(teams, container) {
+        container.innerHTML = `
+            ${timeConfigHTML}
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
+                <h3>Gestão de Grupos</h3>
+                <button onclick="gerarGruposBrawl()" style="width:auto; background:var(--blue-dim); color:var(--blue); border-color:rgba(59,130,246,.35);">Sortear e Criar Grupos</button>
+            </div>
+            <div id="bs-board">Aguardando sorteio...</div>
+        `;
 
-            const q = query(collection(db, "brawl_matches"), orderBy("match_id", "asc"));
-            unsubscribeHub = onSnapshot(q, snapshot => {
-                let matches = [];
-                snapshot.forEach(d => matches.push({docId: d.id, ...d.data()}));
-                if(matches.length === 0) return;
+        const q = query(collection(db, "brawl_matches"), orderBy("match_id", "asc"));
+        unsubscribeHub = onSnapshot(q, snapshot => {
+            let matches = [];
+            snapshot.forEach(d => matches.push({docId: d.id, ...d.data()}));
+            if(matches.length === 0) return;
 
-                let scores = {};
-                teams.forEach(t => scores[t.id] = { name: t.name, class: t.class, wins: 0, group: t.group });
-                
-                let htmlGrupos = { A: '', B: '' };
-                let htmlPartidas = { A: '', B: '', Semis: '', Final: '' };
+            let scores = {};
+            teams.forEach(t => scores[t.id] = { name: t.name, class: t.class, wins: 0, group: t.group });
+            
+            let htmlGrupos = { A: '', B: '' };
+            let htmlPartidas = { A: '', B: '', Semis: '', Final: '' };
 
-                matches.forEach(m => {
-                    if(m.winner_id && scores[m.winner_id]) scores[m.winner_id].wins++;
+            matches.forEach(m => {
+                if(m.winner_id && scores[m.winner_id]) scores[m.winner_id].wins++;
 
-                    const isGroup = m.type === 'grupo';
-                    const concluida = m.winner_id !== null;
-                    const matchHtml = `
-                        <div class="match-card" style="margin-bottom: 10px; padding: 10px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 10px;">
-                                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:bold;">${m.label || 'Partida'}</span>
-                                <span class="time-edit-btn" onclick="editMatchTime('${m.docId}', 'brawl_matches')" title="Editar este horário">${m.timeStr || 'Sem horário'} ✏️</span>
-                            </div>
-                            <div class="team-row ${m.winner_id === m.t1_id ? 'winner' : ''}" style="margin-bottom:2px;">
-                                <span>${m.t1_name}</span>
-                                ${!concluida && m.t1_id ? `<button class="btn-win" onclick="setWinnerBrawl('${m.docId}', '${m.t1_id}')">Venceu</button>` : ''}
-                            </div>
-                            <div class="team-row ${m.winner_id === m.t2_id ? 'winner' : ''}">
-                                <span>${m.t2_name}</span>
-                                ${!concluida && m.t2_id ? `<button class="btn-win" onclick="setWinnerBrawl('${m.docId}', '${m.t2_id}')">Venceu</button>` : ''}
-                            </div>
+                const isGroup = m.type === 'grupo';
+                const concluida = m.winner_id !== null;
+                const matchHtml = `
+                    <div class="match-card" style="margin-bottom: 10px; padding: 10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-bottom: 10px;">
+                            <span style="font-size:0.75rem; color:var(--muted); font-weight:bold;">${m.label || 'Partida'}</span>
+                            <span class="time-edit-btn" onclick="editMatchTime('${m.docId}', 'brawl_matches')" title="Editar este horário">${m.timeStr || 'Sem horário'} ✏️</span>
                         </div>
-                    `;
-
-                    if(isGroup) htmlPartidas[m.group] += matchHtml;
-                    else if (m.type === 'semi') htmlPartidas.Semis += matchHtml;
-                    else if (m.type === 'final') htmlPartidas.Final += matchHtml;
-                });
-
-                ['A', 'B'].forEach(g => {
-                    let groupTeams = Object.values(scores).filter(t => t.group === g).sort((a,b) => b.wins - a.wins);
-                    htmlGrupos[g] = groupTeams.map((t, idx) => `<tr><td style="color:var(--text-muted); font-size:0.8rem;">${idx+1}º</td><td><strong>${t.name}</strong></td><td style="color:var(--primary); font-weight:bold;">${t.wins}</td></tr>`).join('');
-                });
-
-                document.getElementById('bs-board').innerHTML = `
-                    <div class="groups-layout">
-                        <div>
-                            <h4 style="text-align:center; background:#1e293b; margin:0; padding:10px; border-radius:5px 5px 0 0;">GRUPO A</h4>
-                            <table class="group-table"><tr><th>#</th><th>Equipe</th><th>Vitórias</th></tr>${htmlGrupos.A}</table>
-                            <h5 style="margin-top:1.5rem; color:var(--accent);">Confrontos do Grupo A</h5>
-                            <div style="max-height: 400px; overflow-y:auto; padding-right:10px;">${htmlPartidas.A}</div>
+                        <div class="team-row ${m.winner_id === m.t1_id ? 'winner' : ''}" style="margin-bottom:2px;">
+                            <span>${m.t1_name}</span>
+                            ${!concluida && m.t1_id ? `<button class="btn-win" onclick="setWinnerBrawl('${m.docId}', '${m.t1_id}')">Venceu</button>` : ''}
                         </div>
-                        <div>
-                            <h4 style="text-align:center; background:#1e293b; margin:0; padding:10px; border-radius:5px 5px 0 0;">GRUPO B</h4>
-                            <table class="group-table"><tr><th>#</th><th>Equipe</th><th>Vitórias</th></tr>${htmlGrupos.B}</table>
-                            <h5 style="margin-top:1.5rem; color:var(--accent);">Confrontos do Grupo B</h5>
-                            <div style="max-height: 400px; overflow-y:auto; padding-right:10px;">${htmlPartidas.B}</div>
+                        <div class="team-row ${m.winner_id === m.t2_id ? 'winner' : ''}">
+                            <span>${m.t2_name}</span>
+                            ${!concluida && m.t2_id ? `<button class="btn-win" onclick="setWinnerBrawl('${m.docId}', '${m.t2_id}')">Venceu</button>` : ''}
                         </div>
                     </div>
-                    
-                    <div style="margin-top: 3rem; padding-top: 2rem; border-top: 2px dashed var(--border-color);">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <h3 style="color: #fbbf24;">PLAYOFFS (Fase Final - Dia 18)</h3>
-                            <button onclick="gerarPlayoffsBrawl()" style="width:auto; background:#fbbf24; color:black;">Gerar Chaves Finais</button>
+                `;
+
+                if(isGroup) htmlPartidas[m.group] += matchHtml;
+                else if (m.type === 'semi') htmlPartidas.Semis += matchHtml;
+                else if (m.type === 'final') htmlPartidas.Final += matchHtml;
+            });
+
+            ['A', 'B'].forEach(g => {
+                let groupTeams = Object.values(scores).filter(t => t.group === g).sort((a,b) => b.wins - a.wins);
+                htmlGrupos[g] = groupTeams.map((t, idx) => `<tr><td style="color:var(--muted); font-size:0.8rem;">${idx+1}º</td><td><strong>${t.name}</strong></td><td style="color:var(--cyan); font-weight:bold;">${t.wins}</td></tr>`).join('');
+            });
+
+            document.getElementById('bs-board').innerHTML = `
+                <div class="groups-layout">
+                    <div>
+                        <h4 style="text-align:center; background:#1e293b; margin:0; padding:10px; border-radius:5px 5px 0 0;">GRUPO A</h4>
+                        <table class="group-table"><tr><th>#</th><th>Equipe</th><th>Vitórias</th></tr>${htmlGrupos.A}</table>
+                        <h5 style="margin-top:1.5rem; color:var(--blue);">Confrontos do Grupo A</h5>
+                        <div style="max-height: 400px; overflow-y:auto; padding-right:10px;">${htmlPartidas.A}</div>
+                    </div>
+                    <div>
+                        <h4 style="text-align:center; background:#1e293b; margin:0; padding:10px; border-radius:5px 5px 0 0;">GRUPO B</h4>
+                        <table class="group-table"><tr><th>#</th><th>Equipe</th><th>Vitórias</th></tr>${htmlGrupos.B}</table>
+                        <h5 style="margin-top:1.5rem; color:var(--blue);">Confrontos do Grupo B</h5>
+                        <div style="max-height: 400px; overflow-y:auto; padding-right:10px;">${htmlPartidas.B}</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 3rem; padding-top: 2rem; border-top: 2px dashed var(--border);">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3 style="color: #fbbf24;">PLAYOFFS (Fase Final - Dia 18)</h3>
+                        <button onclick="gerarPlayoffsBrawl()" style="width:auto; background:#fbbf24; color:black;">Gerar Chaves Finais</button>
+                    </div>
+                    <div class="groups-layout">
+                        <div><h4 style="color:#94a3b8">Semifinais</h4>${htmlPartidas.Semis}</div>
+                        <div><h4 style="color:#fbbf24">Grande Final</h4>${htmlPartidas.Final}</div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    window.setWinnerBrawl = async (docId, winnerId) => await updateDoc(doc(db, "brawl_matches", docId), { winner_id: winnerId });
+
+    window.gerarGruposBrawl = async () => {
+        const teams = allTeams.filter(t => t.game === "Brawl Stars");
+        if(teams.length !== 10) return alert("Brawl Stars precisa de exatamente 10 equipes!");
+        if(!confirm("Isto apagará chaves existentes e sorteará novos grupos. Confirmar?")) return;
+
+        const dia = document.getElementById('cfg-dia').value;
+        let tempoAtual = strToMins(document.getElementById('cfg-inicio').value);
+        const duracao = parseInt(document.getElementById('cfg-duracao').value);
+        const usaInt = document.getElementById('cfg-usa-int').value;
+        const intInicio = strToMins(document.getElementById('cfg-int-inicio').value);
+        const intFim = strToMins(document.getElementById('cfg-int-fim').value);
+
+        teams.sort(() => Math.random() - 0.5);
+        const batch = writeBatch(db);
+        const oldMatches = await getDocs(collection(db, "brawl_matches"));
+        oldMatches.forEach(d => batch.delete(d.ref));
+
+        let gA = teams.slice(0, 5); let gB = teams.slice(5, 10);
+        gA.forEach(t => batch.update(doc(db, "teams", t.id), { group: 'A' }));
+        gB.forEach(t => batch.update(doc(db, "teams", t.id), { group: 'B' }));
+
+        let matchesListA = []; let matchesListB = [];
+        const buildList = (grp, label, list) => {
+            for(let i=0; i<grp.length; i++) {
+                for(let j=i+1; j<grp.length; j++) {
+                    list.push({ type: 'grupo', group: label, t1_id: grp[i].id, t1_name: grp[i].name, t2_id: grp[j].id, t2_name: grp[j].name, winner_id: null });
+                }
+            }
+        };
+        buildList(gA, 'A', matchesListA); buildList(gB, 'B', matchesListB);
+
+        let matchIdCounter = 1;
+        for(let i=0; i < Math.max(matchesListA.length, matchesListB.length); i++) {
+            const addMatch = (m) => {
+                if(!m) return;
+                if(usaInt === 'sim' && (tempoAtual + duracao) > intInicio && tempoAtual < intFim) tempoAtual = intFim;
+                batch.set(doc(collection(db, "brawl_matches")), {
+                    ...m, match_id: matchIdCounter++, timeStr: `${dia} - ${minsToStr(tempoAtual)}`
+                });
+                tempoAtual += duracao;
+            };
+            addMatch(matchesListA[i]);
+            addMatch(matchesListB[i]);
+        }
+
+        await batch.commit();
+    };
+
+    window.gerarPlayoffsBrawl = async () => {
+        const scores = {};
+        const matches = await getDocs(query(collection(db, "brawl_matches"), where("type", "==", "grupo")));
+        const teamsData = allTeams.filter(t => t.game === "Brawl Stars");
+        teamsData.forEach(t => scores[t.id] = { id: t.id, name: t.name, group: t.group, wins: 0 });
+        matches.forEach(m => { if(m.data().winner_id) scores[m.data().winner_id].wins++; });
+        
+        const gA = Object.values(scores).filter(t => t.group === 'A').sort((a,b) => b.wins - a.wins);
+        const gB = Object.values(scores).filter(t => t.group === 'B').sort((a,b) => b.wins - a.wins);
+
+        const horaFinalStr = document.getElementById('cfg-final-hora').value;
+        const duracao = parseInt(document.getElementById('cfg-duracao').value);
+        const tSemi1 = strToMins(horaFinalStr);
+        const tSemi2 = tSemi1 + duracao;
+        const tGrandFinal = tSemi2 + duracao;
+
+        const batch = writeBatch(db);
+        batch.set(doc(collection(db, "brawl_matches"), "semi1"), {
+            match_id: 100, type: 'semi', label: 'Semi 1 (1ºA vs 2ºB)', timeStr: `Dia 18 - ${minsToStr(tSemi1)}`,
+            t1_id: gA[0].id, t1_name: gA[0].name, t2_id: gB[1].id, t2_name: gB[1].name, winner_id: null
+        });
+        batch.set(doc(collection(db, "brawl_matches"), "semi2"), {
+            match_id: 101, type: 'semi', label: 'Semi 2 (1ºB vs 2ºA)', timeStr: `Dia 18 - ${minsToStr(tSemi2)}`,
+            t1_id: gB[0].id, t1_name: gB[0].name, t2_id: gA[1].id, t2_name: gA[1].name, winner_id: null
+        });
+        batch.set(doc(collection(db, "brawl_matches"), "final"), {
+            match_id: 102, type: 'final', label: '🏆 GRANDE FINAL', timeStr: `Dia 18 - ${minsToStr(tGrandFinal)}`,
+            t1_id: null, t1_name: 'Vencedor Semi 1', t2_id: null, t2_name: 'Vencedor Semi 2', winner_id: null
+        });
+        await batch.commit();
+    };
+
+    onSnapshot(doc(db, "brawl_matches", "semi1"), doc => { if(doc.exists() && doc.data().winner_id) updateDoc(doc.ref.firestore.doc('brawl_matches/final'), { t1_id: doc.data().winner_id, t1_name: doc.data().winner_id === doc.data().t1_id ? doc.data().t1_name : doc.data().t2_name }); });
+    onSnapshot(doc(db, "brawl_matches", "semi2"), doc => { if(doc.exists() && doc.data().winner_id) updateDoc(doc.ref.firestore.doc('brawl_matches/final'), { t2_id: doc.data().winner_id, t2_name: doc.data().winner_id === doc.data().t1_id ? doc.data().t1_name : doc.data().t2_name }); });
+
+    // ------------------------------------------
+    // 3. MODALIDADE VALORANT (REI DA MESA)
+    // ------------------------------------------
+    function renderValorantUI(teams, container) {
+        container.innerHTML = `
+            ${timeConfigHTML}
+            <div style="text-align:center; margin-bottom: 2rem;">
+                <h3 style="color: #ef4444; font-size:1.5rem;">Formato: King of the Hill (Escada)</h3>
+                <button onclick="sortearValorant()" style="width: auto; padding: 10px 20px; background: #ef4444; color:white;">Iniciar Chaveamento (Sorteio Aleatório)</button>
+            </div>
+            <div id="val-board" class="valorant-ladder"></div>
+        `;
+
+        const q = query(collection(db, "val_matches"), orderBy("id", "asc"));
+        unsubscribeHub = onSnapshot(q, snapshot => {
+            const board = document.getElementById('val-board');
+            board.innerHTML = "";
+            snapshot.forEach(docSnap => {
+                const m = docSnap.data();
+                const concluida = m.winner_id !== null;
+                const destrancada = m.t1_id && m.t2_id;
+                
+                board.innerHTML += `
+                    <div class="match-card match-slot ${destrancada ? 'active' : ''} ${m.id === 4 ? 'final' : ''}">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom:5px;">
+                            <div class="badge ${m.id === 4 ? 'bg-yellow' : 'bg-blue'}" style="margin:0;">${m.label}</div>
+                            <span class="time-edit-btn" onclick="editMatchTime('${docSnap.id}', 'val_matches')" title="Editar este horário">${m.timeStr || 'Sem horário'} ✏️</span>
                         </div>
-                        <div class="groups-layout">
-                            <div><h4 style="color:#94a3b8">Semifinais</h4>${htmlPartidas.Semis}</div>
-                            <div><h4 style="color:#fbbf24">Grande Final</h4>${htmlPartidas.Final}</div>
+                        <div class="team-row ${m.winner_id === m.t1_id ? 'winner' : ''}">
+                            <span style="${!m.t1_id ? 'color:gray; font-style:italic' : ''}">${m.t1_name}</span>
+                            ${destrancada && !concluida ? `<button class="btn-win" onclick="processarVitoriaValorant('${docSnap.id}', 1, '${m.t1_id}', '${m.t1_name}', '${m.t2_id}', '${m.t2_name}')">Venceu</button>` : ''}
+                        </div>
+                        <div class="team-row ${m.winner_id === m.t2_id ? 'winner' : ''}">
+                            <span style="${!m.t2_id ? 'color:gray; font-style:italic' : ''}">${m.t2_name}</span>
+                            ${destrancada && !concluida ? `<button class="btn-win" onclick="processarVitoriaValorant('${docSnap.id}', 2, '${m.t2_id}', '${m.t2_name}', '${m.t1_id}', '${m.t1_name}')">Venceu</button>` : ''}
                         </div>
                     </div>
                 `;
             });
+        });
+    }
+
+    window.sortearValorant = async () => {
+        const teams = allTeams.filter(t => t.game === "Valorant");
+        if(teams.length !== 3) return alert("Valorant requer exatamente 3 equipes para o Formato Escada!");
+        if(!confirm("Isto reiniciará a escalada. Confirmar?")) return;
+
+        const dia = document.getElementById('cfg-dia').value;
+        let tempoAtual = strToMins(document.getElementById('cfg-inicio').value);
+        const duracao = parseInt(document.getElementById('cfg-duracao').value);
+        const usaInt = document.getElementById('cfg-usa-int').value;
+        const intInicio = strToMins(document.getElementById('cfg-int-inicio').value);
+        const intFim = strToMins(document.getElementById('cfg-int-fim').value);
+        const horaFinalStr = document.getElementById('cfg-final-hora').value;
+
+        const getNextTime = () => {
+            if(usaInt === 'sim' && (tempoAtual + duracao) > intInicio && tempoAtual < intFim) tempoAtual = intFim;
+            const r = `${dia} - ${minsToStr(tempoAtual)}`;
+            tempoAtual += duracao;
+            return r;
+        };
+
+        teams.sort(() => Math.random() - 0.5);
+        const batch = writeBatch(db);
+        
+        batch.set(doc(db, "val_matches", "m1"), { id: 1, label: 'Partida 1', timeStr: getNextTime(), t1_id: teams[0].id, t1_name: teams[0].name, t2_id: teams[1].id, t2_name: teams[1].name, winner_id: null });
+        batch.set(doc(db, "val_matches", "m2"), { id: 2, label: 'Partida 2 (Acesso Final)', timeStr: getNextTime(), t1_id: null, t1_name: 'Vencedor P1', t2_id: teams[2].id, t2_name: teams[2].name, winner_id: null });
+        batch.set(doc(db, "val_matches", "m3"), { id: 3, label: 'Partida 3 (Repescagem Final)', timeStr: getNextTime(), t1_id: null, t1_name: 'Perdedor P1', t2_id: null, t2_name: 'Perdedor P2', winner_id: null });
+        batch.set(doc(db, "val_matches", "m4"), { id: 4, label: '🏆 GRANDE FINAL', timeStr: `Dia 18 - ${horaFinalStr}`, t1_id: null, t1_name: 'Vencedor P2', t2_id: null, t2_name: 'Vencedor P3', winner_id: null });
+
+        await batch.commit();
+    };
+
+    window.processarVitoriaValorant = async (docId, btnPos, winId, winName, loseId, loseName) => {
+        const batch = writeBatch(db);
+        batch.update(doc(db, "val_matches", docId), { winner_id: winId });
+
+        if(docId === "m1") {
+            batch.update(doc(db, "val_matches", "m2"), { t1_id: winId, t1_name: winName });
+            batch.update(doc(db, "val_matches", "m3"), { t1_id: loseId, t1_name: loseName });
+        } else if(docId === "m2") {
+            batch.update(doc(db, "val_matches", "m4"), { t1_id: winId, t1_name: winName });
+            batch.update(doc(db, "val_matches", "m3"), { t2_id: loseId, t2_name: loseName });
+        } else if(docId === "m3") {
+            batch.update(doc(db, "val_matches", "m4"), { t2_id: winId, t2_name: winName });
         }
 
-        window.setWinnerBrawl = async (docId, winnerId) => await updateDoc(doc(db, "brawl_matches", docId), { winner_id: winnerId });
+        await batch.commit();
+    };
 
-        window.gerarGruposBrawl = async () => {
-            const teams = allTeams.filter(t => t.game === "Brawl Stars");
-            if(teams.length !== 10) return alert("Brawl Stars precisa de exatamente 10 equipes!");
-            if(!confirm("Isto apagará chaves existentes e sorteará novos grupos. Confirmar?")) return;
-
-            // Configurações de tempo
-            const dia = document.getElementById('cfg-dia').value;
-            let tempoAtual = strToMins(document.getElementById('cfg-inicio').value);
-            const duracao = parseInt(document.getElementById('cfg-duracao').value);
-            const usaInt = document.getElementById('cfg-usa-int').value;
-            const intInicio = strToMins(document.getElementById('cfg-int-inicio').value);
-            const intFim = strToMins(document.getElementById('cfg-int-fim').value);
-
-            teams.sort(() => Math.random() - 0.5);
-            const batch = writeBatch(db);
-            const oldMatches = await getDocs(collection(db, "brawl_matches"));
-            oldMatches.forEach(d => batch.delete(d.ref));
-
-            let gA = teams.slice(0, 5); let gB = teams.slice(5, 10);
-            gA.forEach(t => batch.update(doc(db, "teams", t.id), { group: 'A' }));
-            gB.forEach(t => batch.update(doc(db, "teams", t.id), { group: 'B' }));
-
-            let matchesListA = []; let matchesListB = [];
-            const buildList = (grp, label, list) => {
-                for(let i=0; i<grp.length; i++) {
-                    for(let j=i+1; j<grp.length; j++) {
-                        list.push({ type: 'grupo', group: label, t1_id: grp[i].id, t1_name: grp[i].name, t2_id: grp[j].id, t2_name: grp[j].name, winner_id: null });
-                    }
-                }
-            };
-            buildList(gA, 'A', matchesListA); buildList(gB, 'B', matchesListB);
-
-            // Intercala as partidas A e B e aplica horários
-            let matchIdCounter = 1;
-            for(let i=0; i < Math.max(matchesListA.length, matchesListB.length); i++) {
-                const addMatch = (m) => {
-                    if(!m) return;
-                    if(usaInt === 'sim' && (tempoAtual + duracao) > intInicio && tempoAtual < intFim) tempoAtual = intFim;
-                    
-                    batch.set(doc(collection(db, "brawl_matches")), {
-                        ...m, match_id: matchIdCounter++, timeStr: `${dia} - ${minsToStr(tempoAtual)}`
-                    });
-                    tempoAtual += duracao;
-                };
-                addMatch(matchesListA[i]);
-                addMatch(matchesListB[i]);
-            }
-
-            await batch.commit();
-        };
-
-        window.gerarPlayoffsBrawl = async () => {
-            const scores = {};
-            const matches = await getDocs(query(collection(db, "brawl_matches"), where("type", "==", "grupo")));
-            const teamsData = allTeams.filter(t => t.game === "Brawl Stars");
-            teamsData.forEach(t => scores[t.id] = { id: t.id, name: t.name, group: t.group, wins: 0 });
-            matches.forEach(m => { if(m.data().winner_id) scores[m.data().winner_id].wins++; });
-            
-            const gA = Object.values(scores).filter(t => t.group === 'A').sort((a,b) => b.wins - a.wins);
-            const gB = Object.values(scores).filter(t => t.group === 'B').sort((a,b) => b.wins - a.wins);
-
-            // Horários exclusivos para a Fase Final (Sempre Dia 18)
-            const horaFinalStr = document.getElementById('cfg-final-hora').value;
-            const duracao = parseInt(document.getElementById('cfg-duracao').value);
-            const tSemi1 = strToMins(horaFinalStr);
-            const tSemi2 = tSemi1 + duracao;
-            const tGrandFinal = tSemi2 + duracao;
-
-            const batch = writeBatch(db);
-            batch.set(doc(collection(db, "brawl_matches"), "semi1"), {
-                match_id: 100, type: 'semi', label: 'Semi 1 (1ºA vs 2ºB)', timeStr: `Dia 18 - ${minsToStr(tSemi1)}`,
-                t1_id: gA[0].id, t1_name: gA[0].name, t2_id: gB[1].id, t2_name: gB[1].name, winner_id: null
-            });
-            batch.set(doc(collection(db, "brawl_matches"), "semi2"), {
-                match_id: 101, type: 'semi', label: 'Semi 2 (1ºB vs 2ºA)', timeStr: `Dia 18 - ${minsToStr(tSemi2)}`,
-                t1_id: gB[0].id, t1_name: gB[0].name, t2_id: gA[1].id, t2_name: gA[1].name, winner_id: null
-            });
-            batch.set(doc(collection(db, "brawl_matches"), "final"), {
-                match_id: 102, type: 'final', label: '🏆 GRANDE FINAL', timeStr: `Dia 18 - ${minsToStr(tGrandFinal)}`,
-                t1_id: null, t1_name: 'Vencedor Semi 1', t2_id: null, t2_name: 'Vencedor Semi 2', winner_id: null
-            });
-            await batch.commit();
-        };
-
-        onSnapshot(doc(db, "brawl_matches", "semi1"), doc => { if(doc.exists() && doc.data().winner_id) updateDoc(doc.ref.firestore.doc('brawl_matches/final'), { t1_id: doc.data().winner_id, t1_name: doc.data().winner_id === doc.data().t1_id ? doc.data().t1_name : doc.data().t2_name }); });
-        onSnapshot(doc(db, "brawl_matches", "semi2"), doc => { if(doc.exists() && doc.data().winner_id) updateDoc(doc.ref.firestore.doc('brawl_matches/final'), { t2_id: doc.data().winner_id, t2_name: doc.data().winner_id === doc.data().t1_id ? doc.data().t1_name : doc.data().t2_name }); });
-
-        // ------------------------------------------
-        // 3. MODALIDADE VALORANT (REI DA MESA)
-        // ------------------------------------------
-        function renderValorantUI(teams, container) {
-            container.innerHTML = `
-                ${timeConfigHTML}
-                <div style="text-align:center; margin-bottom: 2rem;">
-                    <h3 style="color: #ef4444; font-size:1.5rem;">Formato: King of the Hill (Escada)</h3>
-                    <button onclick="sortearValorant()" style="width: auto; padding: 10px 20px; background: #ef4444; color:white;">Iniciar Chaveamento (Sorteio Aleatório)</button>
-                </div>
-                <div id="val-board" class="valorant-ladder"></div>
-            `;
-
-            const q = query(collection(db, "val_matches"), orderBy("id", "asc"));
-            unsubscribeHub = onSnapshot(q, snapshot => {
-                const board = document.getElementById('val-board');
-                board.innerHTML = "";
-                snapshot.forEach(docSnap => {
-                    const m = docSnap.data();
-                    const concluida = m.winner_id !== null;
-                    const destrancada = m.t1_id && m.t2_id;
-                    
-                    board.innerHTML += `
-                        <div class="match-card match-slot ${destrancada ? 'active' : ''} ${m.id === 4 ? 'final' : ''}">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom:5px;">
-                                <div class="badge ${m.id === 4 ? 'bg-yellow' : 'bg-blue'}" style="margin:0;">${m.label}</div>
-                                <span class="time-edit-btn" onclick="editMatchTime('${docSnap.id}', 'val_matches')" title="Editar este horário">${m.timeStr || 'Sem horário'} ✏️</span>
-                            </div>
-                            <div class="team-row ${m.winner_id === m.t1_id ? 'winner' : ''}">
-                                <span style="${!m.t1_id ? 'color:gray; font-style:italic' : ''}">${m.t1_name}</span>
-                                ${destrancada && !concluida ? `<button class="btn-win" onclick="processarVitoriaValorant('${docSnap.id}', 1, '${m.t1_id}', '${m.t1_name}', '${m.t2_id}', '${m.t2_name}')">Venceu</button>` : ''}
-                            </div>
-                            <div class="team-row ${m.winner_id === m.t2_id ? 'winner' : ''}">
-                                <span style="${!m.t2_id ? 'color:gray; font-style:italic' : ''}">${m.t2_name}</span>
-                                ${destrancada && !concluida ? `<button class="btn-win" onclick="processarVitoriaValorant('${docSnap.id}', 2, '${m.t2_id}', '${m.t2_name}', '${m.t1_id}', '${m.t1_name}')">Venceu</button>` : ''}
-                            </div>
-                        </div>
-                    `;
-                });
-            });
-        }
-
-        window.sortearValorant = async () => {
-            const teams = allTeams.filter(t => t.game === "Valorant");
-            if(teams.length !== 3) return alert("Valorant requer exatamente 3 equipes para o Formato Escada!");
-            if(!confirm("Isto reiniciará a escalada. Confirmar?")) return;
-
-            // Configurações de Tempo
-            const dia = document.getElementById('cfg-dia').value;
-            let tempoAtual = strToMins(document.getElementById('cfg-inicio').value);
-            const duracao = parseInt(document.getElementById('cfg-duracao').value);
-            const usaInt = document.getElementById('cfg-usa-int').value;
-            const intInicio = strToMins(document.getElementById('cfg-int-inicio').value);
-            const intFim = strToMins(document.getElementById('cfg-int-fim').value);
-            const horaFinalStr = document.getElementById('cfg-final-hora').value;
-
-            // Helper para avançar tempo (Partidas Iniciais)
-            const getNextTime = () => {
-                if(usaInt === 'sim' && (tempoAtual + duracao) > intInicio && tempoAtual < intFim) tempoAtual = intFim;
-                const r = `${dia} - ${minsToStr(tempoAtual)}`;
-                tempoAtual += duracao;
-                return r;
-            };
-
-            teams.sort(() => Math.random() - 0.5);
-            const batch = writeBatch(db);
-            
-            batch.set(doc(db, "val_matches", "m1"), { id: 1, label: 'Partida 1', timeStr: getNextTime(), t1_id: teams[0].id, t1_name: teams[0].name, t2_id: teams[1].id, t2_name: teams[1].name, winner_id: null });
-            batch.set(doc(db, "val_matches", "m2"), { id: 2, label: 'Partida 2 (Acesso Final)', timeStr: getNextTime(), t1_id: null, t1_name: 'Vencedor P1', t2_id: teams[2].id, t2_name: teams[2].name, winner_id: null });
-            batch.set(doc(db, "val_matches", "m3"), { id: 3, label: 'Partida 3 (Repescagem Final)', timeStr: getNextTime(), t1_id: null, t1_name: 'Perdedor P1', t2_id: null, t2_name: 'Perdedor P2', winner_id: null });
-            
-            // Final é setada estritamente para o Dia 18 no horário definido
-            batch.set(doc(db, "val_matches", "m4"), { id: 4, label: '🏆 GRANDE FINAL', timeStr: `Dia 18 - ${horaFinalStr}`, t1_id: null, t1_name: 'Vencedor P2', t2_id: null, t2_name: 'Vencedor P3', winner_id: null });
-
-            await batch.commit();
-        };
-
-        window.processarVitoriaValorant = async (docId, btnPos, winId, winName, loseId, loseName) => {
-            const batch = writeBatch(db);
-            batch.update(doc(db, "val_matches", docId), { winner_id: winId }); 
-
-            if(docId === "m1") {
-                batch.update(doc(db, "val_matches", "m2"), { t1_id: winId, t1_name: winName });
-                batch.update(doc(db, "val_matches", "m3"), { t1_id: loseId, t1_name: loseName });
-            } else if(docId === "m2") {
-                batch.update(doc(db, "val_matches", "m4"), { t1_id: winId, t1_name: winName });
-                batch.update(doc(db, "val_matches", "m3"), { t2_id: loseId, t2_name: loseName });
-            } else if(docId === "m3") {
-                batch.update(doc(db, "val_matches", "m4"), { t2_id: winId, t2_name: winName });
-            }
-
-            await batch.commit();
-        };
-
-    </script>
+</script>
 </body>
 </html>
