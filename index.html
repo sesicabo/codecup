@@ -12,10 +12,10 @@
         .podium-box select { background: #000; border: 1px solid #c1ff00; font-size: 1.1rem; color: #fff;}
         
         .groups-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem; }
-        .group-table { background: rgba(255,255,255,0.02); border-radius: 0.5rem; overflow: hidden; }
-        .group-table th { background: rgba(255,255,255,0.05); color: #fff; text-align: center;}
-        .group-table td { text-align: center; }
-        .group-table tr:nth-child(1), .group-table tr:nth-child(2) { background: rgba(16, 185, 129, 0.1); border-left: 3px solid var(--primary); } /* Destaca os 2 classificados */
+        .group-table { background: rgba(255,255,255,0.02); border-radius: 0.5rem; overflow: hidden; width: 100%; border-collapse: collapse;}
+        .group-table th { background: rgba(255,255,255,0.05); color: #fff; text-align: center; padding: 10px;}
+        .group-table td { text-align: center; padding: 10px; border-bottom: 1px solid var(--border-color);}
+        .group-table tr:nth-child(1), .group-table tr:nth-child(2) { background: rgba(16, 185, 129, 0.1); border-left: 3px solid var(--primary); }
         
         .valorant-ladder { display: flex; flex-direction: column; gap: 1rem; max-width: 600px; margin: 0 auto; }
         .match-slot { border-left: 4px solid var(--border-color); padding-left: 1rem; position: relative; }
@@ -26,10 +26,19 @@
         .bg-blue { background: #3b82f6; color: #fff; }
         .bg-yellow { background: #fbbf24; color: #000; }
         .bg-red { background: #ef4444; color: #fff; }
+
+        /* Painel de Horários */
+        .time-config-panel { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem; }
+        .time-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+        .time-grid label { font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 3px; }
+        .time-grid input, .time-grid select { padding: 8px; font-size: 0.9rem; margin-bottom: 10px;}
+        .time-edit-btn { cursor: pointer; color: var(--accent); font-size: 0.85rem; transition: 0.2s; }
+        .time-edit-btn:hover { color: #fff; text-decoration: underline; }
     </style>
 </head>
 <body>
 
+    <!-- LOGIN -->
     <div id="login-section">
         <div class="login-box">
             <h1>CODECUP Admin</h1>
@@ -40,6 +49,7 @@
         </div>
     </div>
 
+    <!-- PAINEL -->
     <div id="admin-section" class="hidden">
         <header>
             <h1>HUB DE TORNEIO <span>CODECUP</span></h1>
@@ -51,6 +61,7 @@
             <button class="tab-btn" onclick="showTab('tab-torneio')">2. Gestão de Chaves e Duelos</button>
         </div>
 
+        <!-- ABA 1: CRUD -->
         <div id="tab-cadastro" class="tab-content">
             <div class="grid-2">
                 <div class="panel">
@@ -75,6 +86,7 @@
             </div>
         </div>
 
+        <!-- ABA 2: HUB DE TORNEIO -->
         <div id="tab-torneio" class="tab-content hidden">
             <div class="panel" style="margin-bottom: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
                 <div style="display: flex; gap: 1rem; align-items: center;">
@@ -89,6 +101,7 @@
                 </div>
             </div>
 
+            <!-- CONTAINER DINÂMICO PARA CADA JOGO -->
             <div id="game-container" class="panel" style="border-top-left-radius: 0; border-top-right-radius: 0; min-height: 400px;">
                 <p style="text-align: center; color: var(--text-muted); margin-top: 3rem;">Selecione uma modalidade acima para abrir o painel de controle.</p>
             </div>
@@ -96,6 +109,7 @@
 
     </div>
 
+    <!-- FIREBASE & LÓGICA CORE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
@@ -115,7 +129,7 @@
         const db = getFirestore(app);
 
         let allTeams = [];
-        let unsubscribeHub = null; // Para limpar listeners antigos ao trocar de aba
+        let unsubscribeHub = null;
 
         // --- SISTEMA BASE ---
         window.showTab = function(tabId) {
@@ -142,7 +156,6 @@
         });
         document.getElementById('btn-logout').addEventListener('click', () => signOut(auth));
 
-        // Cadastro Simplificado
         document.getElementById('btn-save-team').addEventListener('click', async () => {
             const name = document.getElementById('t-name').value;
             const className = document.getElementById('t-class').value;
@@ -162,16 +175,61 @@
                     allTeams.push(t);
                     lista.innerHTML += `<tr><td><strong>${t.name}</strong><br><small>${t.class}</small></td><td>${t.game}</td><td><button class="btn-small-danger" onclick="window.excluirEquipe('${t.id}')">X</button></td></tr>`;
                 });
-                if(document.getElementById('hub-selector').value) window.loadGameHub(); // Re-renderiza o hub se houver mudança de times
+                if(document.getElementById('hub-selector').value) window.loadGameHub();
             });
         }
         window.excluirEquipe = async id => { if(confirm("Excluir?")) await deleteDoc(doc(db, "teams", id)); };
 
 
         // ==========================================
-        // ENGENHARIA DO HUB DE TORNEIO (UX/UI E-SPORTS)
+        // MOTOR DE TEMPO (HELPER FUNCS)
         // ==========================================
+        const strToMins = (str) => { const [h,m] = str.split(':'); return parseInt(h)*60 + parseInt(m); };
+        const minsToStr = (mins) => { 
+            const h = Math.floor(mins/60).toString().padStart(2, '0');
+            const m = (mins%60).toString().padStart(2, '0');
+            return `${h}:${m}`;
+        };
 
+        window.editMatchTime = async function(docId, collectionName) {
+            const novoHorario = prompt("Digite o novo horário para esta partida (Ex: Dia 17 - 10:30):");
+            if(novoHorario) {
+                await updateDoc(doc(db, collectionName, docId), { timeStr: novoHorario });
+            }
+        };
+
+        // UI Base de Configuração de Tempo a ser injetada
+        const timeConfigHTML = `
+            <div class="time-config-panel">
+                <h4 style="margin-top: 0; color: var(--accent);">⚙️ Configuração de Agendamento</h4>
+                <div class="time-grid">
+                    <div><label>Dia Inicial</label><select id="cfg-dia"><option value="Dia 17">Dia 17</option><option value="Dia 18">Dia 18</option></select></div>
+                    <div><label>Início da 1ª Partida</label><input type="time" id="cfg-inicio" value="08:00"></div>
+                    <div><label>Duração/Partida (min)</label><input type="number" id="cfg-duracao" value="30"></div>
+                    <div>
+                        <label>Terá Intervalo?</label>
+                        <select id="cfg-usa-int">
+                            <option value="sim">Sim</option>
+                            <option value="nao">Não</option>
+                        </select>
+                    </div>
+                    <div><label>Início do Intervalo</label><input type="time" id="cfg-int-inicio" value="12:00"></div>
+                    <div><label>Fim do Intervalo</label><input type="time" id="cfg-int-fim" value="13:00"></div>
+                </div>
+                <div style="border-top: 1px dashed var(--border-color); padding-top: 15px; margin-top: 5px; display: flex; align-items: center; gap: 15px;">
+                    <div>
+                        <label style="color: #fbbf24; font-weight: bold; font-size: 0.85rem;">Horário da Fase Final (Restrito p/ Dia 18)</label>
+                        <input type="time" id="cfg-final-hora" value="10:00" style="background: #27272a; border-color: #fbbf24; margin-bottom:0;">
+                    </div>
+                    <p style="font-size: 0.8rem; color: gray; margin: 0; max-width: 400px;">A Grande Final (e Semifinais do Brawl Stars) serão fixadas automaticamente para o Dia 18 a partir deste horário.</p>
+                </div>
+            </div>
+        `;
+
+
+        // ==========================================
+        // GERENCIADOR DE HUB
+        // ==========================================
         window.loadGameHub = function() {
             if(unsubscribeHub) { unsubscribeHub(); unsubscribeHub = null; }
             const game = document.getElementById('hub-selector').value;
@@ -225,7 +283,6 @@
                 </div>
             `;
 
-            // Carrega estado salvo se existir
             const docRef = await getDoc(doc(db, "podiums", game));
             if(docRef.exists()) {
                 const data = docRef.data();
@@ -235,19 +292,16 @@
             }
         }
         window.salvarPodioBR = async (game) => {
-            await setDoc(doc(db, "podiums", game), {
-                pos1: document.getElementById('br-pos1').value,
-                pos2: document.getElementById('br-pos2').value,
-                pos3: document.getElementById('br-pos3').value
-            });
+            await setDoc(doc(db, "podiums", game), { pos1: document.getElementById('br-pos1').value, pos2: document.getElementById('br-pos2').value, pos3: document.getElementById('br-pos3').value });
             alert("Pódio salvo e sincronizado!");
         };
 
         // ------------------------------------------
-        // 2. MODALIDADE BRAWL STARS (GRUPOS + PLAYOFFS)
+        // 2. MODALIDADE BRAWL STARS
         // ------------------------------------------
         function renderBrawlStarsUI(teams, container) {
             container.innerHTML = `
+                ${timeConfigHTML}
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
                     <h3>Gestão de Grupos</h3>
                     <button onclick="gerarGruposBrawl()" style="width:auto; background:var(--accent);">Sortear e Criar Grupos</button>
@@ -259,10 +313,8 @@
             unsubscribeHub = onSnapshot(q, snapshot => {
                 let matches = [];
                 snapshot.forEach(d => matches.push({docId: d.id, ...d.data()}));
-                
                 if(matches.length === 0) return;
 
-                // Calcula as tabelas baseadas nas vitórias dentro dos grupos
                 let scores = {};
                 teams.forEach(t => scores[t.id] = { name: t.name, class: t.class, wins: 0, group: t.group });
                 
@@ -270,15 +322,16 @@
                 let htmlPartidas = { A: '', B: '', Semis: '', Final: '' };
 
                 matches.forEach(m => {
-                    // Soma vitórias
                     if(m.winner_id && scores[m.winner_id]) scores[m.winner_id].wins++;
 
-                    // Constrói visual das partidas
                     const isGroup = m.type === 'grupo';
                     const concluida = m.winner_id !== null;
                     const matchHtml = `
                         <div class="match-card" style="margin-bottom: 10px; padding: 10px;">
-                            <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:5px;">${m.label || 'Partida'}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 10px;">
+                                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:bold;">${m.label || 'Partida'}</span>
+                                <span class="time-edit-btn" onclick="editMatchTime('${m.docId}', 'brawl_matches')" title="Editar este horário">${m.timeStr || 'Sem horário'} ✏️</span>
+                            </div>
                             <div class="team-row ${m.winner_id === m.t1_id ? 'winner' : ''}" style="margin-bottom:2px;">
                                 <span>${m.t1_name}</span>
                                 ${!concluida && m.t1_id ? `<button class="btn-win" onclick="setWinnerBrawl('${m.docId}', '${m.t1_id}')">Venceu</button>` : ''}
@@ -295,7 +348,6 @@
                     else if (m.type === 'final') htmlPartidas.Final += matchHtml;
                 });
 
-                // Ordena Grupos
                 ['A', 'B'].forEach(g => {
                     let groupTeams = Object.values(scores).filter(t => t.group === g).sort((a,b) => b.wins - a.wins);
                     htmlGrupos[g] = groupTeams.map((t, idx) => `<tr><td style="color:var(--text-muted); font-size:0.8rem;">${idx+1}º</td><td><strong>${t.name}</strong></td><td style="color:var(--primary); font-weight:bold;">${t.wins}</td></tr>`).join('');
@@ -305,30 +357,23 @@
                     <div class="groups-layout">
                         <div>
                             <h4 style="text-align:center; background:#1e293b; margin:0; padding:10px; border-radius:5px 5px 0 0;">GRUPO A</h4>
-                            <table class="group-table">
-                                <tr><th>#</th><th>Equipe</th><th>Vitórias</th></tr>
-                                ${htmlGrupos.A}
-                            </table>
+                            <table class="group-table"><tr><th>#</th><th>Equipe</th><th>Vitórias</th></tr>${htmlGrupos.A}</table>
                             <h5 style="margin-top:1.5rem; color:var(--accent);">Confrontos do Grupo A</h5>
-                            <div style="max-height: 300px; overflow-y:auto; padding-right:10px;">${htmlPartidas.A}</div>
+                            <div style="max-height: 400px; overflow-y:auto; padding-right:10px;">${htmlPartidas.A}</div>
                         </div>
                         <div>
                             <h4 style="text-align:center; background:#1e293b; margin:0; padding:10px; border-radius:5px 5px 0 0;">GRUPO B</h4>
-                            <table class="group-table">
-                                <tr><th>#</th><th>Equipe</th><th>Vitórias</th></tr>
-                                ${htmlGrupos.B}
-                            </table>
+                            <table class="group-table"><tr><th>#</th><th>Equipe</th><th>Vitórias</th></tr>${htmlGrupos.B}</table>
                             <h5 style="margin-top:1.5rem; color:var(--accent);">Confrontos do Grupo B</h5>
-                            <div style="max-height: 300px; overflow-y:auto; padding-right:10px;">${htmlPartidas.B}</div>
+                            <div style="max-height: 400px; overflow-y:auto; padding-right:10px;">${htmlPartidas.B}</div>
                         </div>
                     </div>
                     
                     <div style="margin-top: 3rem; padding-top: 2rem; border-top: 2px dashed var(--border-color);">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <h3 style="color: #fbbf24;">PLAYOFFS (Fase Final)</h3>
+                            <h3 style="color: #fbbf24;">PLAYOFFS (Fase Final - Dia 18)</h3>
                             <button onclick="gerarPlayoffsBrawl()" style="width:auto; background:#fbbf24; color:black;">Gerar Chaves Finais</button>
                         </div>
-                        <p style="font-size:0.8rem; color:gray;">Gera as Semifinais cruzando o 1ºA vs 2ºB e 1ºB vs 2ºA baseado na tabela atual acima.</p>
                         <div class="groups-layout">
                             <div><h4 style="color:#94a3b8">Semifinais</h4>${htmlPartidas.Semis}</div>
                             <div><h4 style="color:#fbbf24">Grande Final</h4>${htmlPartidas.Final}</div>
@@ -342,76 +387,88 @@
 
         window.gerarGruposBrawl = async () => {
             const teams = allTeams.filter(t => t.game === "Brawl Stars");
-            if(teams.length !== 10) return alert("Brawl Stars precisa de exatamente 10 equipes cadastradas para este formato!");
+            if(teams.length !== 10) return alert("Brawl Stars precisa de exatamente 10 equipes!");
             if(!confirm("Isto apagará chaves existentes e sorteará novos grupos. Confirmar?")) return;
 
-            // Embaralha e divide
+            // Configurações de tempo
+            const dia = document.getElementById('cfg-dia').value;
+            let tempoAtual = strToMins(document.getElementById('cfg-inicio').value);
+            const duracao = parseInt(document.getElementById('cfg-duracao').value);
+            const usaInt = document.getElementById('cfg-usa-int').value;
+            const intInicio = strToMins(document.getElementById('cfg-int-inicio').value);
+            const intFim = strToMins(document.getElementById('cfg-int-fim').value);
+
             teams.sort(() => Math.random() - 0.5);
             const batch = writeBatch(db);
-            
-            // Apaga estado antigo
             const oldMatches = await getDocs(collection(db, "brawl_matches"));
             oldMatches.forEach(d => batch.delete(d.ref));
 
             let gA = teams.slice(0, 5); let gB = teams.slice(5, 10);
-            
-            // Salva marcação do grupo nas equipes
             gA.forEach(t => batch.update(doc(db, "teams", t.id), { group: 'A' }));
             gB.forEach(t => batch.update(doc(db, "teams", t.id), { group: 'B' }));
 
-            // Gera confrontos diretos (Round Robin)
-            let matchId = 1;
-            const makeMatches = (grp, label) => {
+            let matchesListA = []; let matchesListB = [];
+            const buildList = (grp, label, list) => {
                 for(let i=0; i<grp.length; i++) {
                     for(let j=i+1; j<grp.length; j++) {
-                        batch.set(doc(collection(db, "brawl_matches")), {
-                            match_id: matchId++, type: 'grupo', group: label,
-                            t1_id: grp[i].id, t1_name: grp[i].name,
-                            t2_id: grp[j].id, t2_name: grp[j].name,
-                            winner_id: null
-                        });
+                        list.push({ type: 'grupo', group: label, t1_id: grp[i].id, t1_name: grp[i].name, t2_id: grp[j].id, t2_name: grp[j].name, winner_id: null });
                     }
                 }
             };
-            makeMatches(gA, 'A'); makeMatches(gB, 'B');
+            buildList(gA, 'A', matchesListA); buildList(gB, 'B', matchesListB);
+
+            // Intercala as partidas A e B e aplica horários
+            let matchIdCounter = 1;
+            for(let i=0; i < Math.max(matchesListA.length, matchesListB.length); i++) {
+                const addMatch = (m) => {
+                    if(!m) return;
+                    if(usaInt === 'sim' && (tempoAtual + duracao) > intInicio && tempoAtual < intFim) tempoAtual = intFim;
+                    
+                    batch.set(doc(collection(db, "brawl_matches")), {
+                        ...m, match_id: matchIdCounter++, timeStr: `${dia} - ${minsToStr(tempoAtual)}`
+                    });
+                    tempoAtual += duracao;
+                };
+                addMatch(matchesListA[i]);
+                addMatch(matchesListB[i]);
+            }
+
             await batch.commit();
         };
 
         window.gerarPlayoffsBrawl = async () => {
-            // Calcula pontuação atual dos grupos (simples e direto da tabela do DOM)
-            // Em um sistema robusto buscaríamos do BD, aqui faremos de forma pragmática baseada nas vitórias já calculadas
             const scores = {};
             const matches = await getDocs(query(collection(db, "brawl_matches"), where("type", "==", "grupo")));
             const teamsData = allTeams.filter(t => t.game === "Brawl Stars");
             teamsData.forEach(t => scores[t.id] = { id: t.id, name: t.name, group: t.group, wins: 0 });
-            
             matches.forEach(m => { if(m.data().winner_id) scores[m.data().winner_id].wins++; });
             
             const gA = Object.values(scores).filter(t => t.group === 'A').sort((a,b) => b.wins - a.wins);
             const gB = Object.values(scores).filter(t => t.group === 'B').sort((a,b) => b.wins - a.wins);
 
+            // Horários exclusivos para a Fase Final (Sempre Dia 18)
+            const horaFinalStr = document.getElementById('cfg-final-hora').value;
+            const duracao = parseInt(document.getElementById('cfg-duracao').value);
+            const tSemi1 = strToMins(horaFinalStr);
+            const tSemi2 = tSemi1 + duracao;
+            const tGrandFinal = tSemi2 + duracao;
+
             const batch = writeBatch(db);
-            
-            // Cria Semi 1 (1A x 2B)
             batch.set(doc(collection(db, "brawl_matches"), "semi1"), {
-                match_id: 100, type: 'semi', label: 'Semi 1 (1º Grupo A vs 2º Grupo B)',
+                match_id: 100, type: 'semi', label: 'Semi 1 (1ºA vs 2ºB)', timeStr: `Dia 18 - ${minsToStr(tSemi1)}`,
                 t1_id: gA[0].id, t1_name: gA[0].name, t2_id: gB[1].id, t2_name: gB[1].name, winner_id: null
             });
-            // Cria Semi 2 (1B x 2A)
             batch.set(doc(collection(db, "brawl_matches"), "semi2"), {
-                match_id: 101, type: 'semi', label: 'Semi 2 (1º Grupo B vs 2º Grupo A)',
+                match_id: 101, type: 'semi', label: 'Semi 2 (1ºB vs 2ºA)', timeStr: `Dia 18 - ${minsToStr(tSemi2)}`,
                 t1_id: gB[0].id, t1_name: gB[0].name, t2_id: gA[1].id, t2_name: gA[1].name, winner_id: null
             });
-            // Cria Final (Bloqueada)
             batch.set(doc(collection(db, "brawl_matches"), "final"), {
-                match_id: 102, type: 'final', label: '🏆 GRANDE FINAL',
+                match_id: 102, type: 'final', label: '🏆 GRANDE FINAL', timeStr: `Dia 18 - ${minsToStr(tGrandFinal)}`,
                 t1_id: null, t1_name: 'Vencedor Semi 1', t2_id: null, t2_name: 'Vencedor Semi 2', winner_id: null
             });
-
             await batch.commit();
         };
 
-        // Escuta mudança nas Semis para injetar na Final automaticamente
         onSnapshot(doc(db, "brawl_matches", "semi1"), doc => { if(doc.exists() && doc.data().winner_id) updateDoc(doc.ref.firestore.doc('brawl_matches/final'), { t1_id: doc.data().winner_id, t1_name: doc.data().winner_id === doc.data().t1_id ? doc.data().t1_name : doc.data().t2_name }); });
         onSnapshot(doc(db, "brawl_matches", "semi2"), doc => { if(doc.exists() && doc.data().winner_id) updateDoc(doc.ref.firestore.doc('brawl_matches/final'), { t2_id: doc.data().winner_id, t2_name: doc.data().winner_id === doc.data().t1_id ? doc.data().t1_name : doc.data().t2_name }); });
 
@@ -420,6 +477,7 @@
         // ------------------------------------------
         function renderValorantUI(teams, container) {
             container.innerHTML = `
+                ${timeConfigHTML}
                 <div style="text-align:center; margin-bottom: 2rem;">
                     <h3 style="color: #ef4444; font-size:1.5rem;">Formato: King of the Hill (Escada)</h3>
                     <button onclick="sortearValorant()" style="width: auto; padding: 10px 20px; background: #ef4444; color:white;">Iniciar Chaveamento (Sorteio Aleatório)</button>
@@ -438,7 +496,10 @@
                     
                     board.innerHTML += `
                         <div class="match-card match-slot ${destrancada ? 'active' : ''} ${m.id === 4 ? 'final' : ''}">
-                            <div class="badge ${m.id === 4 ? 'bg-yellow' : 'bg-blue'}">${m.label}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom:5px;">
+                                <div class="badge ${m.id === 4 ? 'bg-yellow' : 'bg-blue'}" style="margin:0;">${m.label}</div>
+                                <span class="time-edit-btn" onclick="editMatchTime('${docSnap.id}', 'val_matches')" title="Editar este horário">${m.timeStr || 'Sem horário'} ✏️</span>
+                            </div>
                             <div class="team-row ${m.winner_id === m.t1_id ? 'winner' : ''}">
                                 <span style="${!m.t1_id ? 'color:gray; font-style:italic' : ''}">${m.t1_name}</span>
                                 ${destrancada && !concluida ? `<button class="btn-win" onclick="processarVitoriaValorant('${docSnap.id}', 1, '${m.t1_id}', '${m.t1_name}', '${m.t2_id}', '${m.t2_name}')">Venceu</button>` : ''}
@@ -458,34 +519,48 @@
             if(teams.length !== 3) return alert("Valorant requer exatamente 3 equipes para o Formato Escada!");
             if(!confirm("Isto reiniciará a escalada. Confirmar?")) return;
 
-            teams.sort(() => Math.random() - 0.5); // Embaralha
+            // Configurações de Tempo
+            const dia = document.getElementById('cfg-dia').value;
+            let tempoAtual = strToMins(document.getElementById('cfg-inicio').value);
+            const duracao = parseInt(document.getElementById('cfg-duracao').value);
+            const usaInt = document.getElementById('cfg-usa-int').value;
+            const intInicio = strToMins(document.getElementById('cfg-int-inicio').value);
+            const intFim = strToMins(document.getElementById('cfg-int-fim').value);
+            const horaFinalStr = document.getElementById('cfg-final-hora').value;
+
+            // Helper para avançar tempo (Partidas Iniciais)
+            const getNextTime = () => {
+                if(usaInt === 'sim' && (tempoAtual + duracao) > intInicio && tempoAtual < intFim) tempoAtual = intFim;
+                const r = `${dia} - ${minsToStr(tempoAtual)}`;
+                tempoAtual += duracao;
+                return r;
+            };
+
+            teams.sort(() => Math.random() - 0.5);
             const batch = writeBatch(db);
             
-            // M1: T1 vs T2
-            batch.set(doc(db, "val_matches", "m1"), { id: 1, label: 'Partida 1', t1_id: teams[0].id, t1_name: teams[0].name, t2_id: teams[1].id, t2_name: teams[1].name, winner_id: null });
-            // M2: Vencedor M1 vs T3
-            batch.set(doc(db, "val_matches", "m2"), { id: 2, label: 'Partida 2 (Acesso Final)', t1_id: null, t1_name: 'Vencedor P1', t2_id: teams[2].id, t2_name: teams[2].name, winner_id: null });
-            // M3: Perdedor M1 vs Perdedor M2
-            batch.set(doc(db, "val_matches", "m3"), { id: 3, label: 'Partida 3 (Repescagem Final)', t1_id: null, t1_name: 'Perdedor P1', t2_id: null, t2_name: 'Perdedor P2', winner_id: null });
-            // M4: Final
-            batch.set(doc(db, "val_matches", "m4"), { id: 4, label: '🏆 GRANDE FINAL', t1_id: null, t1_name: 'Vencedor P2', t2_id: null, t2_name: 'Vencedor P3', winner_id: null });
+            batch.set(doc(db, "val_matches", "m1"), { id: 1, label: 'Partida 1', timeStr: getNextTime(), t1_id: teams[0].id, t1_name: teams[0].name, t2_id: teams[1].id, t2_name: teams[1].name, winner_id: null });
+            batch.set(doc(db, "val_matches", "m2"), { id: 2, label: 'Partida 2 (Acesso Final)', timeStr: getNextTime(), t1_id: null, t1_name: 'Vencedor P1', t2_id: teams[2].id, t2_name: teams[2].name, winner_id: null });
+            batch.set(doc(db, "val_matches", "m3"), { id: 3, label: 'Partida 3 (Repescagem Final)', timeStr: getNextTime(), t1_id: null, t1_name: 'Perdedor P1', t2_id: null, t2_name: 'Perdedor P2', winner_id: null });
+            
+            // Final é setada estritamente para o Dia 18 no horário definido
+            batch.set(doc(db, "val_matches", "m4"), { id: 4, label: '🏆 GRANDE FINAL', timeStr: `Dia 18 - ${horaFinalStr}`, t1_id: null, t1_name: 'Vencedor P2', t2_id: null, t2_name: 'Vencedor P3', winner_id: null });
 
             await batch.commit();
         };
 
         window.processarVitoriaValorant = async (docId, btnPos, winId, winName, loseId, loseName) => {
             const batch = writeBatch(db);
-            batch.update(doc(db, "val_matches", docId), { winner_id: winId }); // Marca vencedor
+            batch.update(doc(db, "val_matches", docId), { winner_id: winId }); 
 
-            // A Mágica do UX (Fluxo em Cascata): Injeta dinamicamente os times na próxima chave!
             if(docId === "m1") {
-                batch.update(doc(db, "val_matches", "m2"), { t1_id: winId, t1_name: winName }); // Vencedor vai pra P2
-                batch.update(doc(db, "val_matches", "m3"), { t1_id: loseId, t1_name: loseName }); // Perdedor vai pra P3
+                batch.update(doc(db, "val_matches", "m2"), { t1_id: winId, t1_name: winName });
+                batch.update(doc(db, "val_matches", "m3"), { t1_id: loseId, t1_name: loseName });
             } else if(docId === "m2") {
-                batch.update(doc(db, "val_matches", "m4"), { t1_id: winId, t1_name: winName }); // Vencedor da P2 vai pra Final
-                batch.update(doc(db, "val_matches", "m3"), { t2_id: loseId, t2_name: loseName }); // Perdedor da P2 vai pra P3
+                batch.update(doc(db, "val_matches", "m4"), { t1_id: winId, t1_name: winName });
+                batch.update(doc(db, "val_matches", "m3"), { t2_id: loseId, t2_name: loseName });
             } else if(docId === "m3") {
-                batch.update(doc(db, "val_matches", "m4"), { t2_id: winId, t2_name: winName }); // Vencedor da Repescagem vai pra Final
+                batch.update(doc(db, "val_matches", "m4"), { t2_id: winId, t2_name: winName });
             }
 
             await batch.commit();
